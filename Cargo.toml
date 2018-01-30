@@ -1,0 +1,6 @@
+[package]
+authors = ["Kilian Kilger <kkilger@gmail.com>"]
+name = "Rustirinth"
+version = "0.1.0"
+[dependencies]
+piston = "*"
