@@ -1,6 +1,14 @@
 [package]
 authors = ["Kilian Kilger <kkilger@gmail.com>"]
-name = "Rustirinth"
+name = "rustirinth"
 version = "0.1.0"
+
 [dependencies]
-piston = "*"
+failure = "~0.1"
+failure_derive = "~0.1"
+gdk ="~0.7"
+
+[dependencies.gtk]
+version = "~0.3"
+features = ["v3_10"]
+
