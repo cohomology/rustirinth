@@ -1,5 +1,3 @@
-#![recursion_limit = "1024"]
-
 extern crate failure; 
 #[macro_use] extern crate failure_derive;
 extern crate gtk;
