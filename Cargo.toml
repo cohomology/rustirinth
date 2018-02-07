@@ -10,5 +10,5 @@ gdk ="~0.7"
 
 [dependencies.gtk]
 version = "~0.3"
-features = ["v3_10"]
+features = ["v3_22"]
 
