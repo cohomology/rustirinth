@@ -63,6 +63,7 @@ impl LabyrinthGame {
         game.connect_delete_event()
             .connect_key_press_event()
             .connect_on_size_allocate_event()
+            .connect_on_draw_event()
             .show_all();
         game
     }
@@ -94,6 +95,17 @@ impl LabyrinthGame {
             });
         self
     }
+    fn connect_on_draw_event(&self) -> &Self {
+        use gtk::WidgetExt;
+        let window_instance = self.main_window.clone();
+        self.main_window
+            .drawing_area
+            .connect_draw(move |_, cairo_context| {
+                window_instance.state.borrow_mut().on_draw(cairo_context);
+                gtk::Inhibit(true)
+            });
+        self   
+    }
     fn show_all(&self) -> &Self {
         use gtk::WidgetExt;
         self.main_window.window.show_all();
@@ -110,6 +122,10 @@ impl LabyrinthWindowState {
     fn on_size_allocate(&mut self, rect: &gtk::Rectangle) {
         self.width = rect.width as i32;
         self.height = rect.height as i32;
+    }
+    fn on_draw(&mut self, cairo_context : &cairo::Context) {
+        cairo_context.save();
+        cairo_context.restore();
     }
 }
 
