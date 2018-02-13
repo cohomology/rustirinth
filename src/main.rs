@@ -58,7 +58,7 @@ impl LabyrinthGame {
     }
     fn initialize_window(screen: &gdk::Screen) -> LabyrinthGame {
         let game = LabyrinthGame {
-            main_window: std::rc::Rc::new(LabyrinthMainWindow::new(&screen)),
+            main_window: std::rc::Rc::new(LabyrinthMainWindow::new(screen)),
         };
         game.connect_delete_event()
             .connect_key_press_event()
@@ -72,18 +72,17 @@ impl LabyrinthGame {
             gtk::main_quit();
             gtk::Inhibit(true)
         });
-        &self
+        self
     }
     fn connect_key_press_event(&self) -> &Self {
         use gtk::WidgetExt;
         self.main_window.window.connect_key_press_event(|_, key| {
-            match key.get_keyval() {
-                gdk::enums::key::Escape => gtk::main_quit(),
-                _ => (),
+            if key.get_keyval() == gdk::enums::key::Escape {
+                gtk::main_quit();
             }
             gtk::Inhibit(true)
         });
-        &self
+        self
     }
     fn connect_on_size_allocate_event(&self) -> &Self {
         use gtk::WidgetExt;
@@ -93,12 +92,12 @@ impl LabyrinthGame {
             .connect_size_allocate(move |_, rect| {
                 window_instance.state.borrow_mut().on_size_allocate(rect);
             });
-        &self
+        self
     }
     fn show_all(&self) -> &Self {
         use gtk::WidgetExt;
         self.main_window.window.show_all();
-        &self
+        self
     }
 }
 
