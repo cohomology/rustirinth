@@ -104,7 +104,7 @@ impl LabyrinthGame {
                 window_instance.state.borrow_mut().on_draw(cairo_context);
                 gtk::Inhibit(true)
             });
-        self   
+        self
     }
     fn show_all(&self) -> &Self {
         use gtk::WidgetExt;
@@ -123,7 +123,7 @@ impl LabyrinthWindowState {
         self.width = rect.width as i32;
         self.height = rect.height as i32;
     }
-    fn on_draw(&mut self, cairo_context : &cairo::Context) {
+    fn on_draw(&mut self, cairo_context: &cairo::Context) {
         cairo_context.save();
         cairo_context.restore();
     }
