@@ -14,7 +14,7 @@ enum LabyrinthError {
 struct LabyrinthMainWindow {
     window: gtk::Window,
     drawing_area: gtk::DrawingArea,
-    state: std::cell::RefCell<LabyrinthWindowState>,
+    state: std::cell::RefCell<LabyrinthState>,
 }
 
 impl LabyrinthMainWindow {
@@ -31,7 +31,7 @@ impl LabyrinthMainWindow {
         LabyrinthMainWindow {
             window: window,
             drawing_area: drawing_area,
-            state: std::cell::RefCell::new(LabyrinthWindowState {
+            state: std::cell::RefCell::new(LabyrinthState {
                 width: monitor_workarea.width,
                 height: monitor_workarea.height,
             }),
@@ -62,6 +62,7 @@ impl LabyrinthGame {
         };
         game.connect_delete_event()
             .connect_key_press_event()
+            .connect_button_press_event()
             .connect_on_size_allocate_event()
             .connect_on_draw_event()
             .show_all();
@@ -83,6 +84,17 @@ impl LabyrinthGame {
             }
             gtk::Inhibit(true)
         });
+        self
+    }
+    fn connect_button_press_event(&self) -> &Self {
+        use gtk::WidgetExt;
+        let window_instance = self.main_window.clone();
+        self.main_window
+            .drawing_area
+            .connect_button_press_event(move |_, event| {
+                window_instance.state.borrow_mut().on_button_press(event);
+                gtk::Inhibit(true)
+            });
         self
     }
     fn connect_on_size_allocate_event(&self) -> &Self {
@@ -113,12 +125,12 @@ impl LabyrinthGame {
     }
 }
 
-struct LabyrinthWindowState {
+struct LabyrinthState {
     width: i32,
     height: i32,
 }
 
-impl LabyrinthWindowState {
+impl LabyrinthState {
     fn on_size_allocate(&mut self, rect: &gtk::Rectangle) {
         self.width = rect.width as i32;
         self.height = rect.height as i32;
@@ -127,6 +139,7 @@ impl LabyrinthWindowState {
         cairo_context.save();
         cairo_context.restore();
     }
+    fn on_button_press(&mut self, _event: &gdk::EventButton) {}
 }
 
 fn main() {
