@@ -4,85 +4,112 @@ extern crate gtk;
 extern crate gdk;
 extern crate cairo;
 
-use failure::{Error, Fail};
-
-#[allow(dead_code)]
 #[derive(Debug, Fail)]
 enum LabyrinthError {
     #[fail(display = "Could not get default screen")]
     CouldNotGetDefaultScreen
 }
 
-struct LabyrinthGame {
+struct LabyrinthMainWindow {
     window : gtk::Window,
     drawing_area : gtk::DrawingArea,
-    width : u32,
-    height : u32,
+    state : std::cell::RefCell<LabyrinthState>
 }
 
-struct RefLabyrinthGame(std::rc::Rc<LabyrinthGame>);
-
-impl RefLabyrinthGame {
-    fn new() -> Result<RefLabyrinthGame, Error> {
-        gtk::init()?;
-        let game = RefLabyrinthGame::initialize_display()?;
-        gtk::main();
-        Ok(game)
-    }
-    fn initialize_display() -> Result<RefLabyrinthGame, Error> {
-        if let Some(screen) = gdk::Screen::get_default() {
-            RefLabyrinthGame::initialize_window(&screen)
-        } 
-        else {
-            Err(LabyrinthError::CouldNotGetDefaultScreen.into())
-        }
-    } 
-    fn initialize_window(screen : & gdk::Screen) -> Result<RefLabyrinthGame, Error> {
+impl LabyrinthMainWindow {
+    fn new(screen : &gdk::Screen) -> LabyrinthMainWindow { 
         use gtk::prelude::*;
         use gdk::ScreenExt; 
-        use std::borrow::BorrowMut;
-        let monitor = screen.get_primary_monitor();
-        let mut game = RefLabyrinthGame(std::rc::Rc::new(LabyrinthGame { 
-            window : gtk::Window::new(gtk::WindowType::Toplevel), 
-            drawing_area : gtk::DrawingArea::new(), 
-            width: 0, 
-            height : 0 
-        })); 
-        let inner = game.0.clone();
-        inner.window.fullscreen_on_monitor(screen, monitor);
-        inner.window.connect_delete_event(|_,_| {
+        let window = gtk::Window::new(gtk::WindowType::Toplevel);
+        let monitor = screen.get_primary_monitor(); 
+        let monitor_workarea = screen.get_monitor_workarea(monitor);
+        window.fullscreen_on_monitor(screen, monitor);    
+        let drawing_area = gtk::DrawingArea::new();
+        drawing_area.set_size_request(monitor_workarea.width, monitor_workarea.height); 
+        window.add(&drawing_area);  
+        window.show_all();   
+        LabyrinthMainWindow {
+            window : window, 
+            drawing_area : drawing_area, 
+            state : std::cell::RefCell::new( LabyrinthState {
+                width : monitor_workarea.width,
+                height : monitor_workarea.height 
+            })
+        }  
+    } 
+}
+
+struct LabyrinthGame {
+    main_window : std::rc::Rc<LabyrinthMainWindow>
+}
+
+impl LabyrinthGame {
+    fn new() -> Result<LabyrinthGame, failure::Error> {
+        gtk::init()?;
+        let game = LabyrinthGame::initialize_screen()?;
+        gtk::main();
+        Ok(game)              
+    }
+    fn initialize_screen() -> Result<LabyrinthGame, failure::Error> {
+        match gdk::Screen::get_default() {
+            Some(screen) => Ok(LabyrinthGame::initialize_window(&screen)),
+            None => Err(LabyrinthError::CouldNotGetDefaultScreen.into()) 
+        }
+    } 
+    fn initialize_window(screen : &gdk::Screen) -> LabyrinthGame {
+        let game = LabyrinthGame {
+            main_window : std::rc::Rc::new(LabyrinthMainWindow::new(&screen))
+        };
+        game.connect_delete_event();
+        game.connect_key_press_event();
+        game.connect_on_size_allocate_event();
+        game
+    }
+    fn connect_delete_event(&self) {
+        use gtk::WidgetExt;
+        self.main_window.window.connect_delete_event(|_, _| {
             gtk::main_quit();
             gtk::Inhibit(true)
-        }); 
-        inner.clone().drawing_area.connect_size_allocate(move |_, rect| {
-          RefLabyrinthGame::on_size_allocate(inner, rect);
         });
-        let geometry = screen.get_monitor_geometry(monitor);  
-        game.0.drawing_area.set_size_request(geometry.width, geometry.height);
-        game.0.window.add(&game.0.drawing_area);
-        game.0.window.connect_key_press_event(|_, key| {
+    }
+    fn connect_key_press_event(&self) {
+        use gtk::WidgetExt;
+        self.main_window.window.connect_key_press_event(|_, key| {
             match key.get_keyval() {
                 gdk::enums::key::Escape => gtk::main_quit(),
                 _ => ()
             }
             gtk::Inhibit(true)
-        });
-        game.0.window.show_all(); 
-        Ok(game)
-    } 
-    fn on_size_allocate(mut game : std::rc::Rc<LabyrinthGame>, rect: &gdk::Rectangle) {
-        game.width = rect.width as u32;
-        game.height = rect.height as u32;
+        });  
+    }
+    fn connect_on_size_allocate_event(&self) { 
+        use gtk::WidgetExt;
+        let window_instance = self.main_window.clone();
+        self.main_window.drawing_area.connect_size_allocate(move |_, rect| {
+            window_instance.state.borrow_mut().on_size_allocate(rect);
+        }); 
+    }
+}
+
+struct LabyrinthState {
+    width : i32,
+    height : i32, 
+} 
+
+impl LabyrinthState { 
+    fn on_size_allocate(&mut self, rect: &gtk::Rectangle) {
+        self.width = rect.width as i32;
+        self.height = rect.height as i32;
     }
 }
 
 fn main() {
-    let game = RefLabyrinthGame::new();
+    let game = LabyrinthGame::new();
     if let Err(ref e) = game {
         use ::std::io::Write;
         let stderr = &mut ::std::io::stderr();
         let _ = writeln!(stderr, "Error: {}", e);
-        let mut fail: &Fail = e.cause(); 
+        let mut fail: &failure::Fail = e.cause(); 
         while let Some(cause) = fail.cause() {
             let _ = writeln!(stderr, "Caused by: {}", cause);
             fail = cause;
