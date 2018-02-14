@@ -6,7 +6,7 @@ extern crate gdk;
 extern crate gtk;
 
 mod main_window;
-mod game; 
+mod game;
 mod state;
 
 fn main() {

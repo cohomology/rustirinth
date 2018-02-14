@@ -5,6 +5,7 @@ use gdk;
 pub struct LabyrinthState {
     pub width: i32,
     pub height: i32,
+    pub drawing_area: gtk::DrawingArea,
 }
 
 impl LabyrinthState {
@@ -17,4 +18,4 @@ impl LabyrinthState {
         cairo_context.restore();
     }
     pub fn on_button_press(&mut self, _event: &gdk::EventButton) {}
-}   
+}

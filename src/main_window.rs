@@ -6,7 +6,6 @@ use state;
 
 pub struct LabyrinthMainWindow {
     pub window: gtk::Window,
-    pub drawing_area: gtk::DrawingArea,
     pub state: std::cell::RefCell<state::LabyrinthState>,
 }
 
@@ -23,11 +22,11 @@ impl LabyrinthMainWindow {
         window.add(&drawing_area);
         LabyrinthMainWindow {
             window: window,
-            drawing_area: drawing_area,
             state: std::cell::RefCell::new(state::LabyrinthState {
                 width: monitor_workarea.width,
                 height: monitor_workarea.height,
+                drawing_area: drawing_area,
             }),
         }
     }
-} 
+}
