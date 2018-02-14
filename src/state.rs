@@ -8,7 +8,7 @@ pub struct LabyrinthState {
     pub drawing_area: gtk::DrawingArea, 
     width: i32,
     height: i32,
-    labyrinth : std::option::Option<Labyrinth>
+    labyrinth : std::option::Option<labyrinth::Labyrinth>
 }
 
 impl LabyrinthState {
@@ -23,7 +23,7 @@ impl LabyrinthState {
     pub fn on_size_allocate(&mut self, rect: &gtk::Rectangle) {
         self.width = rect.width as i32;
         self.height = rect.height as i32;
-        self.labyrinth = Labyrinth::new(self.width, self.height);
+        self.labyrinth = Some(labyrinth::Labyrinth::new(self.width, self.height));
     }
     pub fn on_draw(&mut self, cairo_context: &cairo::Context) {
         cairo_context.save();
