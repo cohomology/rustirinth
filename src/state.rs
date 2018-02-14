@@ -1,15 +1,18 @@
+use std;
+use labyrinth;
+
 pub struct LabyrinthState {
-    width: i32,
-    height: i32,
-    labyrinth : std::option::Option<labyrinth::Labyrinth>
+    pub width: i32,
+    pub height: i32,
+    pub labyrinth: std::option::Option<labyrinth::Labyrinth>,
 }
 
 impl LabyrinthState {
-    pub fn new(width : i32, height : i32) -> LabyrinthState {
+    pub fn new((width, height): (i32, i32)) -> LabyrinthState {
         LabyrinthState {
             width: width,
             height: height,
-            labyrinth : None, 
+            labyrinth: None,
         }
-    }   
-};    
+    }
+}
