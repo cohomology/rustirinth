@@ -5,7 +5,7 @@ pub struct Labyrinth {
     y : f64,
     width : f64,
     height : f64,
-    state : ndarray::ArrayD<bool>,  
+    marked : ndarray::ArrayD<bool>,  
 } 
 
 impl Labyrinth {
@@ -21,7 +21,7 @@ impl Labyrinth {
             y : ( total_height / 2 - height / 2 ) as f64,
             width : width as f64, 
             height : height as f64,
-            state : ndarray::ArrayD::<bool>::default(ndarray::IxDyn(&[(width / box_size) as usize, (height / box_size) as usize]))
+            marked : ndarray::ArrayD::<bool>::default(ndarray::IxDyn(&[(width / box_size) as usize, (height / box_size) as usize]))
         }
     }
 }
