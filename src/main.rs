@@ -1,15 +1,17 @@
-extern crate cairo;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
 extern crate gdk;
 extern crate gtk;
+extern crate cairo; 
+extern crate ndarray;
 #[macro_use]
 extern crate lazy_static;
 
 mod main_window;
 mod game;
 mod state;
+mod labyrinth;
 
 fn main() {
     let result = game::LabyrinthGame::run();
