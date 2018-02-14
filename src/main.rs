@@ -4,6 +4,8 @@ extern crate failure;
 extern crate failure_derive;
 extern crate gdk;
 extern crate gtk;
+#[macro_use]
+extern crate lazy_static;
 
 mod main_window;
 mod game;

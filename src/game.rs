@@ -34,19 +34,22 @@ impl LabyrinthGame {
         }.connect_delete_event()
             .connect_key_press_event()
             .connect_button_press_event()
+            .connect_motion_notify_event()
             .connect_on_size_allocate_event()
             .connect_on_draw_event()
             .show_all()
     }
     fn connect_delete_event(self) -> Self {
-        gtk::WidgetExt::connect_delete_event(&self.main_window.window, |_, _| {
+        use gtk::WidgetExt;
+        self.main_window.window.connect_delete_event(|_, _| {
             gtk::main_quit();
             gtk::Inhibit(true)
         });
         self
     }
     fn connect_key_press_event(self) -> Self {
-        gtk::WidgetExt::connect_key_press_event(&self.main_window.window, |_, key| {
+        use gtk::WidgetExt;
+        self.main_window.window.connect_key_press_event(|_, key| {
             if key.get_keyval() == gdk::enums::key::Escape {
                 gtk::main_quit();
             }
@@ -55,17 +58,18 @@ impl LabyrinthGame {
         self
     }
     fn connect_button_press_event(self) -> Self {
+        use gtk::WidgetExt;
         let window_instance = self.main_window.clone();
-        gtk::WidgetExt::connect_button_press_event(&self.main_window.window, move |_, event| {
+        self.main_window.state.borrow().drawing_area.connect_button_press_event(move |_, event| {
             window_instance.state.borrow_mut().on_button_press(event);
             gtk::Inhibit(true)
         });
         self
     }
     fn connect_on_size_allocate_event(self) -> Self {
+        use gtk::WidgetExt;
         let window_instance = self.main_window.clone();
-        gtk::WidgetExt::connect_size_allocate(
-            &self.main_window.state.borrow_mut().drawing_area,
+        self.main_window.state.borrow().drawing_area.connect_size_allocate(
             move |_, rect| {
                 window_instance.state.borrow_mut().on_size_allocate(rect);
             },
@@ -73,9 +77,9 @@ impl LabyrinthGame {
         self
     }
     fn connect_on_draw_event(self) -> Self {
+        use gtk::WidgetExt;
         let window_instance = self.main_window.clone();
-        gtk::WidgetExt::connect_draw(
-            &self.main_window.state.borrow_mut().drawing_area,
+        self.main_window.state.borrow().drawing_area.connect_draw(
             move |_, cairo_context| {
                 window_instance.state.borrow_mut().on_draw(cairo_context);
                 gtk::Inhibit(true)
@@ -83,6 +87,15 @@ impl LabyrinthGame {
         );
         self
     }
+    fn connect_motion_notify_event(self) -> Self {
+        use gtk::WidgetExt;
+        let window_instance = self.main_window.clone();
+        self.main_window.state.borrow().drawing_area.connect_motion_notify_event(move |_, event| {
+            window_instance.state.borrow_mut().on_motion_notify(event);
+            gtk::Inhibit(true)
+        });
+        self
+    }  
     fn show_all(self) -> Self {
         gtk::WidgetExt::show_all(&self.main_window.window);
         self
