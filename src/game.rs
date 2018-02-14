@@ -15,6 +15,7 @@ pub enum LabyrinthError {
     CouldNotGetDefaultScreen,
 }
 
+#[derive(Debug)]
 pub struct LabyrinthGame {
     main_window: main_window::LabyrinthMainWindow,
     state: std::rc::Rc<std::cell::RefCell<state::LabyrinthState>>,

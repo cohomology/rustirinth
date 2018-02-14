@@ -1,5 +1,6 @@
 use ndarray;
 
+#[derive(Debug)]
 pub struct Labyrinth {
     x: i32,
     y: i32,

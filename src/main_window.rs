@@ -1,6 +1,7 @@
 use gtk;
 use gdk;
 
+#[derive(Debug)]
 pub struct LabyrinthMainWindow {
     pub window: gtk::Window,
     pub drawing_area: gtk::DrawingArea,

@@ -1,6 +1,7 @@
 use std;
 use labyrinth;
 
+#[derive(Debug)]
 pub struct LabyrinthState {
     pub width: i32,
     pub height: i32,
