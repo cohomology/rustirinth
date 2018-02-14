@@ -6,7 +6,7 @@ use state;
 
 pub struct LabyrinthMainWindow {
     pub window: gtk::Window,
-    pub state: std::cell::RefCell<state::LabyrinthState >,
+    pub event_handler: std::cell::RefCell<state::LabyrinthState>,
 }
 
 impl LabyrinthMainWindow {

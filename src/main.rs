@@ -10,7 +10,7 @@ extern crate lazy_static;
 
 mod main_window;
 mod game;
-mod state;
+mod events;
 mod labyrinth;
 
 fn main() {
