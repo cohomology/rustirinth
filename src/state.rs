@@ -1,16 +1,20 @@
-struct LabyrinthState {
-    width: i32,
-    height: i32,
+use cairo;
+use gtk;
+use gdk;
+
+pub struct LabyrinthState {
+    pub width: i32,
+    pub height: i32,
 }
 
 impl LabyrinthState {
-    fn on_size_allocate(&mut self, rect: &gtk::Rectangle) {
+    pub fn on_size_allocate(&mut self, rect: &gtk::Rectangle) {
         self.width = rect.width as i32;
         self.height = rect.height as i32;
     }
-    fn on_draw(&mut self, cairo_context: &cairo::Context) {
+    pub fn on_draw(&mut self, cairo_context: &cairo::Context) {
         cairo_context.save();
         cairo_context.restore();
     }
-    fn on_button_press(&mut self, _event: &gdk::EventButton) {}
+    pub fn on_button_press(&mut self, _event: &gdk::EventButton) {}
 }   

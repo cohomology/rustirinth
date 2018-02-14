@@ -1,11 +1,17 @@
-struct LabyrinthMainWindow {
-    window: gtk::Window,
-    drawing_area: gtk::DrawingArea,
-    state: std::cell::RefCell<LabyrinthState>,
+use std;
+use gtk;
+use gdk;
+
+use state;
+
+pub struct LabyrinthMainWindow {
+    pub window: gtk::Window,
+    pub drawing_area: gtk::DrawingArea,
+    pub state: std::cell::RefCell<state::LabyrinthState>,
 }
 
 impl LabyrinthMainWindow {
-    fn new(screen: &gdk::Screen) -> LabyrinthMainWindow {
+    pub fn new(screen: &gdk::Screen) -> LabyrinthMainWindow {
         use gtk::prelude::*;
         use gdk::ScreenExt;
         let window = gtk::Window::new(gtk::WindowType::Toplevel);
@@ -18,7 +24,7 @@ impl LabyrinthMainWindow {
         LabyrinthMainWindow {
             window: window,
             drawing_area: drawing_area,
-            state: std::cell::RefCell::new(LabyrinthState {
+            state: std::cell::RefCell::new(state::LabyrinthState {
                 width: monitor_workarea.width,
                 height: monitor_workarea.height,
             }),

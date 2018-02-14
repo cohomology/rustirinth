@@ -1,13 +1,26 @@
-struct LabyrinthGame {
-    main_window: std::rc::Rc<LabyrinthMainWindow>,
+use gtk;
+use gdk;
+use std;
+
+use failure;
+use main_window;
+
+#[derive(Debug, Fail)]
+pub enum LabyrinthError {
+    #[fail(display = "Could not get default screen")]
+    CouldNotGetDefaultScreen,
+}      
+
+pub struct LabyrinthGame {
+    main_window: std::rc::Rc<main_window::LabyrinthMainWindow>,
 }
 
 impl LabyrinthGame {
-    fn run() -> Result<(), failure::Error> {
+    pub fn run() -> Result<(), failure::Error> {
         gtk::init()?;
-        let game = LabyrinthGame::initialize_screen()?;
+        let _ = LabyrinthGame::initialize_screen()?;
         gtk::main();
-        Ok(game)
+        Ok(())
     }
     fn initialize_screen() -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
@@ -17,7 +30,7 @@ impl LabyrinthGame {
     }
     fn initialize_window(screen: &gdk::Screen) -> LabyrinthGame {
         LabyrinthGame {
-            main_window: std::rc::Rc::new(LabyrinthMainWindow::new(screen)),
+            main_window: std::rc::Rc::new(main_window::LabyrinthMainWindow::new(screen)),
         }.connect_delete_event()
          .connect_key_press_event()
          .connect_button_press_event()
@@ -26,7 +39,7 @@ impl LabyrinthGame {
          .show_all()
     }
     fn connect_delete_event(self) -> Self {
-        gtk::WidgetExt::connect_delete_event(self.main_window.window, |_, _| {
+        gtk::WidgetExt::connect_delete_event(&self.main_window.window, |_, _| {
             gtk::main_quit();
             gtk::Inhibit(true)
         });

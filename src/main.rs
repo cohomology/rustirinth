@@ -8,11 +8,10 @@ extern crate gtk;
 mod main_window;
 mod game; 
 mod state;
-mod enums;
 
 fn main() {
-    let result = LabyrinthGame::run();
-    if let Err(ref e) = game {
+    let result = game::LabyrinthGame::run();
+    if let Err(ref e) = result {
         use std::io::Write;
         let stderr = &mut ::std::io::stderr();
         let _ = writeln!(stderr, "Error: {}", e);
