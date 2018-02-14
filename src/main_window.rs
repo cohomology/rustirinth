@@ -6,7 +6,8 @@ use state;
 
 pub struct LabyrinthMainWindow {
     pub window: gtk::Window,
-    pub event_handler: std::cell::RefCell<state::LabyrinthState>,
+    pub drawing_area : gtk::DrawingArea,
+    pub state: std::cell::RefCell<state::LabyrinthState>,
 }
 
 impl LabyrinthMainWindow {
@@ -30,10 +31,10 @@ impl LabyrinthMainWindow {
         drawing_area.add_events(*EVENT_MASK);
         LabyrinthMainWindow {
             window: window,
+            drawing_area: drawing_area,
             state: std::cell::RefCell::new(state::LabyrinthState::new(
                     monitor_workarea.width, 
-                    monitor_workarea.height,
-                    drawing_area
+                    monitor_workarea.height
         ))}
     }
 }

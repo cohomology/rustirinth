@@ -4,6 +4,7 @@ use std;
 
 use failure;
 use main_window;
+use event_handler;
 
 #[derive(Debug, Fail)]
 pub enum LabyrinthError {
@@ -13,6 +14,7 @@ pub enum LabyrinthError {
 
 pub struct LabyrinthGame {
     main_window: std::rc::Rc<main_window::LabyrinthMainWindow>,
+    event_handler: event_handler::EventHandler,  
 }
 
 impl LabyrinthGame {
