@@ -1,6 +1,5 @@
 use gtk;
 use gdk;
-use std;
 
 use failure;
 use main_window;
@@ -8,6 +7,8 @@ use event_handler;
 use state;
 
 use gtk::WidgetExt;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Debug, Fail)]
 pub enum LabyrinthError {
@@ -18,7 +19,8 @@ pub enum LabyrinthError {
 #[derive(Debug)]
 pub struct LabyrinthGame {
     main_window: main_window::LabyrinthMainWindow,
-    state: std::rc::Rc<std::cell::RefCell<state::LabyrinthState>>,
+    event_handler: Rc<RefCell<event_handler::EventHandler>>,
+    state: Rc<RefCell<state::LabyrinthState>>,
 }
 
 impl LabyrinthGame {
@@ -39,7 +41,8 @@ impl LabyrinthGame {
         let requested_size = main_window.requested_size;
         LabyrinthGame {
             main_window: main_window,
-            state: std::rc::Rc::new(std::cell::RefCell::new(state::LabyrinthState::new(
+            event_handler: Rc::new(RefCell::new(event_handler::EventHandler::new())),
+            state: Rc::new(RefCell::new(state::LabyrinthState::new(
                 requested_size,
             ))),
         }.connect_delete_event()
@@ -68,43 +71,47 @@ impl LabyrinthGame {
     }
     fn connect_button_press_event(self) -> Self {
         let state = self.state.clone();
+        let event_handler = self.event_handler.clone();
         self.main_window
             .window
             .connect_button_press_event(move |_, event| {
-                let mut borrow = state.borrow_mut();
-                event_handler::on_button_press(&mut *borrow, event);
+                let mut borrowed_state = state.borrow_mut();
+                event_handler.borrow_mut().on_button_press(&mut *borrowed_state, event);
                 gtk::Inhibit(true)
             });
         self
     }
     fn connect_on_size_allocate_event(self) -> Self {
         let state = self.state.clone();
+        let event_handler = self.event_handler.clone(); 
         self.main_window
             .drawing_area
             .connect_size_allocate(move |_, rect| {
-                let mut borrow = state.borrow_mut();
-                event_handler::on_size_allocate(&mut *borrow, rect);
+                let mut borrowed_state = state.borrow_mut();
+                event_handler.borrow_mut().on_size_allocate(&mut *borrowed_state, rect);
             });
         self
     }
     fn connect_on_draw_event(self) -> Self {
+        let event_handler = self.event_handler.clone(); 
         let state = self.state.clone();
         self.main_window
             .drawing_area
             .connect_draw(move |_, cairo_context| {
-                let mut borrow = state.borrow_mut();
-                event_handler::on_draw(&mut *borrow, cairo_context);
+                let mut borrowed_state = state.borrow_mut();
+                event_handler.borrow_mut().on_draw(&mut *borrowed_state, cairo_context);
                 gtk::Inhibit(true)
             });
         self
     }
     fn connect_motion_notify_event(self) -> Self {
+        let event_handler = self.event_handler.clone(); 
         let state = self.state.clone();
         self.main_window
             .drawing_area
             .connect_motion_notify_event(move |_, event| {
-                let mut borrow = state.borrow_mut();
-                event_handler::on_motion_notify(&mut *borrow, event);
+                let mut borrowed_state = state.borrow_mut();
+                event_handler.borrow_mut().on_motion_notify(&mut *borrowed_state, event);
                 gtk::Inhibit(true)
             });
         self
