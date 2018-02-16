@@ -73,16 +73,15 @@ impl LabyrinthGame {
     fn connect_button_press_event(self) -> Self {
         let state = self.state.clone();
         let event_handler = self.event_handler.clone();
-        let drawing_area = self.main_window.drawing_area.clone();
         self.main_window
             .window
-            .connect_button_press_event(move |_, event| {
+            .connect_button_press_event(move |myself, event| {
                 let mut borrowed_state = state.borrow_mut();
                 if event_handler
                     .borrow_mut()
                     .on_button_press(&mut *borrowed_state, event)
                 {
-                    drawing_area.queue_draw();
+                    myself.queue_draw();
                 }
                 gtk::Inhibit(true)
             });
@@ -118,16 +117,15 @@ impl LabyrinthGame {
     fn connect_motion_notify_event(self) -> Self {
         let event_handler = self.event_handler.clone();
         let state = self.state.clone();
-        let drawing_area = self.main_window.drawing_area.clone();
         self.main_window
             .drawing_area
-            .connect_motion_notify_event(move |_, event| {
+            .connect_motion_notify_event(move |myself, event| {
                 let mut borrowed_state = state.borrow_mut();
                 if event_handler
                     .borrow_mut()
                     .on_motion_notify(&mut *borrowed_state, event)
                 {
-                    drawing_area.queue_draw();
+                    myself.queue_draw();
                 }
                 gtk::Inhibit(true)
             });
