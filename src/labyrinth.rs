@@ -1,14 +1,23 @@
 use ndarray;
 
-const BOX_SIZE: i32 = 64;  
+pub const BOX_SIZE: i32 = 64;  
 
 #[derive(Debug)]
 pub struct Labyrinth {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-    marked: ndarray::ArrayD<bool>,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub x_box_cnt : i32,
+    pub y_box_cnt : i32,
+    pub marked: ndarray::ArrayD<bool>,
+}
+
+pub struct Rectangle {
+    pub x : i32,
+    pub y : i32,
+    pub width : i32,
+    pub height : i32
 }
                                                                 
 impl Labyrinth {
@@ -18,23 +27,36 @@ impl Labyrinth {
         let top_margin = total_height / MARGIN_FACTOR;
         let width = (total_width - 2 * left_margin) / BOX_SIZE * BOX_SIZE;
         let height = (total_height - 2 * top_margin) / BOX_SIZE * BOX_SIZE;
+        let x_box_cnt = width / BOX_SIZE;
+        let y_box_cnt = height / BOX_SIZE;
         Labyrinth {
             x: total_width / 2 - width / 2,
             y: total_height / 2 - height / 2,
             width: width,
             height: height,
+            x_box_cnt : x_box_cnt,
+            y_box_cnt : y_box_cnt,
             marked: ndarray::ArrayD::<bool>::default(ndarray::IxDyn(&[
-                (width / BOX_SIZE) as usize,
-                (height / BOX_SIZE) as usize,
+                x_box_cnt as usize,
+                y_box_cnt as usize,
             ])),
         }
     }
-    // pub fn pixel_to_box(&self, (x,y) : (i32, i32)) -> Option<(i32, i32)> {
-    //     if x < self.x || x >= self.x + self.width ||
-    //        y < self.y || y >= self.y + self.height {
-    //            None
-    //        } else {
-    //            Some( ( ( x - self.x ) % BOX_SIZE, ( y - self.y ) % BOX_SIZE ) )
-    //        }
-    // }
+    pub fn pixel_to_box(&self, (x,y) : (f64, f64)) -> Option<(i32, i32)> {
+        if x <= self.x as f64 || x >= ( self.x + self.width ) as f64 ||
+           y <= self.y as f64 || y >= ( self.y + self.height ) as f64 {
+               None
+           } else {
+               Some(( ( ( x - self.x as f64) / BOX_SIZE as f64 ) as i32, 
+                      ( ( y - self.y as f64 ) / BOX_SIZE as f64 ) as i32 ))
+           }
+    }
+    pub fn box_to_pixel(&self, (x_box, y_box) : (i32, i32)) -> Option<Rectangle> {
+        if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
+            None
+        }
+        else {
+            Some( Rectangle { x : self.x + BOX_SIZE * x_box, y : self.y + BOX_SIZE * y_box, width: BOX_SIZE, height : BOX_SIZE } )
+        }
+    }
 }

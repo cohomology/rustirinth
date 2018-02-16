@@ -1,10 +1,11 @@
+use std;
 use gtk;
 use gdk;
 
 #[derive(Debug)]
 pub struct LabyrinthMainWindow {
     pub window: gtk::Window,
-    pub drawing_area: gtk::DrawingArea,
+    pub drawing_area: std::rc::Rc<gtk::DrawingArea>,
     pub requested_size: (i32, i32),
 }
 
@@ -29,7 +30,7 @@ impl LabyrinthMainWindow {
         drawing_area.add_events(*EVENT_MASK);
         LabyrinthMainWindow {
             window: window,
-            drawing_area: drawing_area,
+            drawing_area: std::rc::Rc::new(drawing_area),
             requested_size: (monitor_workarea.width, monitor_workarea.height),
         }
     }
