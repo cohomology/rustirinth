@@ -6,7 +6,7 @@ use gdk;
 pub struct LabyrinthMainWindow {
     pub window: gtk::Window,
     pub drawing_area: std::rc::Rc<gtk::DrawingArea>,
-    pub requested_size: (i32, i32),
+    pub requested_size: (u32, u32),
 }
 
 impl LabyrinthMainWindow {
@@ -31,7 +31,10 @@ impl LabyrinthMainWindow {
         LabyrinthMainWindow {
             window: window,
             drawing_area: std::rc::Rc::new(drawing_area),
-            requested_size: (monitor_workarea.width, monitor_workarea.height),
+            requested_size: (
+                monitor_workarea.width as u32,
+                monitor_workarea.height as u32,
+            ),
         }
     }
 }

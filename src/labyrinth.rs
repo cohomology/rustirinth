@@ -1,28 +1,28 @@
 use ndarray;
 
-pub const BOX_SIZE: i32 = 64;
+pub const BOX_SIZE: u32 = 64;
 
 #[derive(Debug)]
 pub struct Labyrinth {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
-    pub x_box_cnt: i32,
-    pub y_box_cnt: i32,
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+    pub x_box_cnt: u32,
+    pub y_box_cnt: u32,
     pub marked: ndarray::ArrayD<bool>,
 }
 
 pub struct Rectangle {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
 }
 
 impl Labyrinth {
-    pub fn new(total_width: i32, total_height: i32) -> Labyrinth {
-        const MARGIN_FACTOR: i32 = 32;
+    pub fn new(total_width: u32, total_height: u32) -> Labyrinth {
+        const MARGIN_FACTOR: u32 = 32;
         let left_margin = total_width / MARGIN_FACTOR;
         let top_margin = total_height / MARGIN_FACTOR;
         let width = (total_width - 2 * left_margin) / BOX_SIZE * BOX_SIZE;
@@ -42,19 +42,14 @@ impl Labyrinth {
             ])),
         }
     }
-    pub fn pixel_to_box(&self, (x, y): (f64, f64)) -> Option<(i32, i32)> {
-        if x <= self.x as f64 || x >= (self.x + self.width) as f64 || y <= self.y as f64
-            || y >= (self.y + self.height) as f64
-        {
+    pub fn pixel_to_box(&self, (x, y): (u32, u32)) -> Option<(u32, u32)> {
+        if x <= self.x || x >= self.x + self.width || y <= self.y || y >= self.y + self.height {
             None
         } else {
-            Some((
-                ((x - self.x as f64) / BOX_SIZE as f64) as i32,
-                ((y - self.y as f64) / BOX_SIZE as f64) as i32,
-            ))
+            Some((((x - self.x) / BOX_SIZE), ((y - self.y) / BOX_SIZE)))
         }
     }
-    pub fn box_to_pixel(&self, (x_box, y_box): (i32, i32)) -> Option<Rectangle> {
+    pub fn box_to_pixel(&self, (x_box, y_box): (u32, u32)) -> Option<Rectangle> {
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
             None
         } else {
