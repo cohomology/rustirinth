@@ -68,7 +68,7 @@ impl EventHandler {
             cairo_context.line_to(f64::from(labyrinth.x + labyrinth.width), f64::from(y_pos));
         }
         cairo_context.stroke();
-        for (index, _) in labyrinth.marked.indexed_iter().filter(|&(_, elem)| *elem) {
+        for (index, _) in labyrinth.marked.indexed_iter().filter( |&(_, &elem)| elem) {
             let (x_box, y_box) = (index[0] as u32, index[1] as u32);
             if let Some(rectangle) = labyrinth.box_to_pixel((x_box, y_box)) {
                 cairo_context.rectangle(
