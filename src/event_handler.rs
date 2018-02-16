@@ -44,10 +44,9 @@ impl EventHandler {
                 return self.handle_mark_box(labyrinth, event.get_position());
             }
         }
-        return false;
+        false
     }
     fn print_labyrinth(&self, labyrinth: &labyrinth::Labyrinth, cairo_context: &cairo::Context) {
-        use ndarray::Dimension;
         cairo_context.set_source_rgb(0.0, 0.0, 0.0);
         for x_cnt in 0..(labyrinth.x_box_cnt + 1) {
             let x_pos = labyrinth.x + labyrinth::BOX_SIZE * x_cnt;
@@ -86,6 +85,6 @@ impl EventHandler {
                 }
             }
         }
-        return false;
+        false
     }
 }
