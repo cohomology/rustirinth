@@ -23,19 +23,19 @@ pub struct LabyrinthGame {
 }
 
 impl LabyrinthGame {
-    pub fn run() -> Result<(), failure::Error> {
+    pub fn run(box_size : u32) -> Result<(), failure::Error> {
         gtk::init()?;
-        let _ = LabyrinthGame::initialize_screen()?;
+        let _ = LabyrinthGame::initialize_screen(box_size)?;
         gtk::main();
         Ok(())
     }
-    fn initialize_screen() -> Result<LabyrinthGame, failure::Error> {
+    fn initialize_screen(box_size : u32) -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
-            Some(screen) => Ok(LabyrinthGame::initialize_window(&screen)),
+            Some(screen) => Ok(LabyrinthGame::initialize_window(box_size, &screen)),
             None => Err(LabyrinthError::CouldNotGetDefaultScreen.into()),
         }
     }
-    fn initialize_window(screen: &gdk::Screen) -> LabyrinthGame {
+    fn initialize_window(box_size: u32, screen: &gdk::Screen) -> LabyrinthGame {
         let main_window = main_window::LabyrinthMainWindow::new(screen);
         let requested_size = main_window.requested_size;
         LabyrinthGame {
@@ -44,7 +44,7 @@ impl LabyrinthGame {
                 event_handler::EventHandler::new(),
             )),
             state: std::rc::Rc::new(std::cell::RefCell::new(labyrinth::LabyrinthState::new(
-                requested_size,
+                box_size, requested_size,
             ))),
         }.connect_delete_event()
             .connect_key_press_event()

@@ -19,7 +19,7 @@ impl EventHandler {
         if rect.width > 0 && rect.height > 0 {
             state.width = rect.width as u32;
             state.height = rect.height as u32;
-            state.labyrinth = Some(labyrinth::Labyrinth::new(state.width, state.height));
+            state.labyrinth = Some(labyrinth::Labyrinth::new(state.box_size, state.width, state.height));
         }
     }
     pub fn on_draw(
@@ -58,12 +58,12 @@ impl EventHandler {
     fn print_labyrinth(&self, labyrinth: &labyrinth::Labyrinth, cairo_context: &cairo::Context) {
         cairo_context.set_source_rgb(0.0, 0.0, 0.0);
         for x_cnt in 0..(labyrinth.x_box_cnt + 1) {
-            let x_pos = labyrinth.x + labyrinth::BOX_SIZE * x_cnt;
+            let x_pos = labyrinth.x + labyrinth.box_size * x_cnt;
             cairo_context.move_to(f64::from(x_pos), f64::from(labyrinth.y));
             cairo_context.line_to(f64::from(x_pos), f64::from(labyrinth.y + labyrinth.height));
         }
         for y_cnt in 0..(labyrinth.y_box_cnt + 1) {
-            let y_pos = labyrinth.y + labyrinth::BOX_SIZE * y_cnt;
+            let y_pos = labyrinth.y + labyrinth.box_size * y_cnt;
             cairo_context.move_to(f64::from(labyrinth.x), f64::from(y_pos));
             cairo_context.line_to(f64::from(labyrinth.x + labyrinth.width), f64::from(y_pos));
         }
