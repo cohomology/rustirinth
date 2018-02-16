@@ -2,7 +2,6 @@ use cairo;
 use gtk;
 use gdk;
 use labyrinth;
-use state;
 use ndarray;
 
 #[derive(Debug)]
@@ -12,14 +11,22 @@ impl EventHandler {
     pub fn new() -> EventHandler {
         EventHandler {}
     }
-    pub fn on_size_allocate(&mut self, state: &mut state::LabyrinthState, rect: &gtk::Rectangle) {
+    pub fn on_size_allocate(
+        &mut self,
+        state: &mut labyrinth::LabyrinthState,
+        rect: &gtk::Rectangle,
+    ) {
         if rect.width > 0 && rect.height > 0 {
             state.width = rect.width as u32;
             state.height = rect.height as u32;
             state.labyrinth = Some(labyrinth::Labyrinth::new(state.width, state.height));
         }
     }
-    pub fn on_draw(&mut self, state: &mut state::LabyrinthState, cairo_context: &cairo::Context) {
+    pub fn on_draw(
+        &mut self,
+        state: &mut labyrinth::LabyrinthState,
+        cairo_context: &cairo::Context,
+    ) {
         cairo_context.save();
         if let Some(labyrinth) = state.labyrinth.as_mut() {
             self.print_labyrinth(labyrinth, cairo_context);
@@ -28,7 +35,7 @@ impl EventHandler {
     }
     pub fn on_button_press(
         &mut self,
-        state: &mut state::LabyrinthState,
+        state: &mut labyrinth::LabyrinthState,
         event: &gdk::EventButton,
     ) -> bool {
         if let Some(ref mut labyrinth) = state.labyrinth {
@@ -38,7 +45,7 @@ impl EventHandler {
     }
     pub fn on_motion_notify(
         &mut self,
-        state: &mut state::LabyrinthState,
+        state: &mut labyrinth::LabyrinthState,
         event: &gdk::EventMotion,
     ) -> bool {
         if let Some(ref mut labyrinth) = state.labyrinth {

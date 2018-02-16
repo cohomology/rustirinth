@@ -12,7 +12,6 @@ mod main_window;
 mod game;
 mod event_handler;
 mod labyrinth;
-mod state;
 
 fn main() {
     let result = game::LabyrinthGame::run();

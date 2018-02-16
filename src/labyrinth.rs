@@ -1,6 +1,15 @@
+use std;
 use ndarray;
 
 pub const BOX_SIZE: u32 = 64;
+
+#[derive(Debug)]
+pub struct Rectangle {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
 
 #[derive(Debug)]
 pub struct Labyrinth {
@@ -11,13 +20,6 @@ pub struct Labyrinth {
     pub x_box_cnt: u32,
     pub y_box_cnt: u32,
     pub marked: ndarray::ArrayD<bool>,
-}
-
-pub struct Rectangle {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
 }
 
 impl Labyrinth {
@@ -59,6 +61,23 @@ impl Labyrinth {
                 width: BOX_SIZE,
                 height: BOX_SIZE,
             })
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct LabyrinthState {
+    pub width: u32,
+    pub height: u32,
+    pub labyrinth: std::option::Option<Labyrinth>,
+}
+
+impl LabyrinthState {
+    pub fn new((width, height): (u32, u32)) -> LabyrinthState {
+        LabyrinthState {
+            width: width,
+            height: height,
+            labyrinth: None,
         }
     }
 }

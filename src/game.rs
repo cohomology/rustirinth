@@ -1,14 +1,13 @@
+use std;
 use gtk;
 use gdk;
 
 use failure;
 use main_window;
 use event_handler;
-use state;
+use labyrinth;
 
 use gtk::WidgetExt;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 #[derive(Debug, Fail)]
 pub enum LabyrinthError {
@@ -19,8 +18,8 @@ pub enum LabyrinthError {
 #[derive(Debug)]
 pub struct LabyrinthGame {
     main_window: main_window::LabyrinthMainWindow,
-    event_handler: Rc<RefCell<event_handler::EventHandler>>,
-    state: Rc<RefCell<state::LabyrinthState>>,
+    event_handler: std::rc::Rc<std::cell::RefCell<event_handler::EventHandler>>,
+    state: std::rc::Rc<std::cell::RefCell<labyrinth::LabyrinthState>>,
 }
 
 impl LabyrinthGame {
@@ -41,8 +40,12 @@ impl LabyrinthGame {
         let requested_size = main_window.requested_size;
         LabyrinthGame {
             main_window: main_window,
-            event_handler: Rc::new(RefCell::new(event_handler::EventHandler::new())),
-            state: Rc::new(RefCell::new(state::LabyrinthState::new(requested_size))),
+            event_handler: std::rc::Rc::new(std::cell::RefCell::new(
+                event_handler::EventHandler::new(),
+            )),
+            state: std::rc::Rc::new(std::cell::RefCell::new(labyrinth::LabyrinthState::new(
+                requested_size,
+            ))),
         }.connect_delete_event()
             .connect_key_press_event()
             .connect_button_press_event()
