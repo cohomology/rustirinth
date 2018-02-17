@@ -54,7 +54,7 @@ impl<T> IsARectangle<T> for (T, T, T, T) where T : Copy {
 }
 
 #[derive(Debug, Copy, Clone)] 
-pub struct GeneralRectangle<T> where T : Eq + PartialEq + Copy + Clone + std::fmt::Debug {
+pub struct GeneralRectangle<T> where T : Copy + Clone + std::fmt::Debug {
     pub x: T,
     pub y: T,
     pub width: T,
@@ -63,9 +63,18 @@ pub struct GeneralRectangle<T> where T : Eq + PartialEq + Copy + Clone + std::fm
 
 pub type Rectangle = GeneralRectangle<u32>;
 
-impl<T> IsARectangle<T> for GeneralRectangle<T> {
-    fn from_tuple( (x,y,width,height) : (T, T, T, T) ) -> Rectangle {
-        Rectangle { x,y,width,height }
+impl<T> PartialEq for GeneralRectangle<T> where T : PartialEq + Copy + Clone + std::fmt::Debug {
+   fn eq(&self, other: &GeneralRectangle<T>) -> bool {
+       self.x == other.x && 
+       self.y == other.y && 
+       self.width == other.width && 
+       self.height == other.height
+   }
+}
+
+impl<T> IsARectangle<T> for GeneralRectangle<T> where T : Copy + Clone + std::fmt::Debug {
+    fn from_tuple( (x,y,width,height) : (T, T, T, T) ) -> GeneralRectangle<T> {
+        GeneralRectangle::<T> { x,y,width,height }
     } 
     fn x(&self) -> T { self.x }
     fn y(&self) -> T { self.y }
@@ -73,25 +82,25 @@ impl<T> IsARectangle<T> for GeneralRectangle<T> {
     fn height(&self) -> T { self.height }  
 }
 
-impl Rectangle {
-    pub fn from<T, R>(rectangle: &R) -> Result<Rectangle, failure::Error> 
-        where R : IsARectangle<T>, u32 : conv::ValueFrom<T>, T : Copy + std::fmt::Debug {
-        let x = Rectangle::convert(rectangle.x())?;
-        let y = Rectangle::convert(rectangle.y())?;
-        let width = Rectangle::convert(rectangle.width())?;
-        let height = Rectangle::convert(rectangle.height())?;
-        Ok(Rectangle { x, y, width, height })
+impl<U> GeneralRectangle<U> where U : Copy + Clone + std::fmt::Debug {
+    pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, failure::Error> 
+        where R : IsARectangle<T>, U : conv::ValueFrom<T>, T : Copy + std::fmt::Debug {
+        let x = GeneralRectangle::<U>::convert(rectangle.x())?;
+        let y = GeneralRectangle::<U>::convert(rectangle.y())?;
+        let width = GeneralRectangle::<U>::convert(rectangle.width())?;
+        let height = GeneralRectangle::<U>::convert(rectangle.height())?;
+        Ok(GeneralRectangle::<U> { x, y, width, height })
     }
-    pub fn approx_from<T,R>(rectangle :&R) -> Result<Rectangle, failure::Error> 
-        where R : IsARectangle<T>, u32 : conv::ApproxFrom<T>, T : Copy + std::fmt::Debug { 
-        let x = Rectangle::approx_convert(rectangle.x())?;
-        let y = Rectangle::approx_convert(rectangle.y())?;
-        let width = Rectangle::approx_convert(rectangle.width())?;
-        let height = Rectangle::approx_convert(rectangle.height())?;
-        Ok(Rectangle { x, y, width, height }) 
+    pub fn approx_from<T,R>(rectangle :&R) -> Result<GeneralRectangle<U>, failure::Error> 
+        where R : IsARectangle<T>, U : conv::ApproxFrom<T>, T : Copy + std::fmt::Debug { 
+        let x = GeneralRectangle::<U>::approx_convert(rectangle.x())?;
+        let y = GeneralRectangle::<U>::approx_convert(rectangle.y())?;
+        let width = GeneralRectangle::<U>::approx_convert(rectangle.width())?;
+        let height = GeneralRectangle::<U>::approx_convert(rectangle.height())?;
+        Ok(GeneralRectangle::<U> { x, y, width, height }) 
     }
     pub fn to<T, R>(&self) -> Result<R, failure::Error> 
-        where R : IsARectangle<T>, T : conv::ValueFrom<u32> + Copy + std::fmt::Debug {
+        where R : IsARectangle<T>, T : conv::ValueFrom<U> + Copy + std::fmt::Debug {
         let x = Rectangle::convert(self.x)?;
         let y = Rectangle::convert(self.y)?;
         let width = Rectangle::convert(self.width)?;

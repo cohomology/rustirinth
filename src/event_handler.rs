@@ -94,7 +94,7 @@ impl EventHandler {
         let extents = cairo_context.clip_extents();
         let rectangle = basic_types::Rectangle::approx_from(&extents)?;
         if rectangle == self.to_be_painted.rectangle {
-            self.repaint_box(cairo_context);
+            self.repaint_box(cairo_context)?;
             self.to_be_painted = INITIAL_REPAINT_INFO;
         } else {
             self.trigger_complete_redraw(labyrinth, cairo_context);
@@ -161,6 +161,7 @@ impl EventHandler {
                                 float_rectangle.height());
         cairo_context.fill();
         cairo_context.restore();
+        Ok(())
     }
     fn handle_mark_box(
         &mut self,
