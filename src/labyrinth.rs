@@ -1,13 +1,6 @@
 use std;
 use ndarray;
-
-#[derive(Eq, PartialEq, Debug, Hash, Copy, Clone)]
-pub struct Rectangle {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
-}
+use basic_types;
 
 #[derive(Debug)]
 pub struct Labyrinth {
@@ -54,11 +47,11 @@ impl Labyrinth {
             ))
         }
     }
-    pub fn box_to_pixel(&self, (x_box, y_box): (u32, u32)) -> Option<Rectangle> {
+    pub fn box_to_pixel(&self, (x_box, y_box): (u32, u32)) -> Option<basic_types::Rectangle> {
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
             None
         } else {
-            Some(Rectangle {
+            Some(basic_types::Rectangle {
                 x: self.x + self.box_size * x_box,
                 y: self.y + self.box_size * y_box,
                 width: self.box_size,

@@ -1,19 +1,14 @@
 use std;
 use gtk;
 use gdk;
-
 use failure;
+
+use basic_types;
 use main_window;
 use event_handler;
 use labyrinth;
 
 use gtk::WidgetExt;
-
-#[derive(Debug, Fail)]
-pub enum LabyrinthError {
-    #[fail(display = "Could not get default screen")]
-    CouldNotGetDefaultScreen,
-}
 
 #[derive(Debug)]
 pub struct LabyrinthGame {
@@ -32,7 +27,7 @@ impl LabyrinthGame {
     fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
             Some(screen) => Ok(LabyrinthGame::initialize_window(box_size, &screen)),
-            None => Err(LabyrinthError::CouldNotGetDefaultScreen.into()),
+            None => Err(basic_types::LabyrinthError::CouldNotGetDefaultScreen.into()),
         }
     }
     fn initialize_window(box_size: u32, screen: &gdk::Screen) -> LabyrinthGame {

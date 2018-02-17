@@ -3,11 +3,12 @@ use gtk;
 use gdk;
 use ndarray;
 
+use basic_types;
 use labyrinth;
 
 #[derive(Debug)]
 struct RepaintInfo {
-    rectangle: labyrinth::Rectangle,
+    rectangle: basic_types::Rectangle,
     color: (f64, f64, f64),
 }
 
@@ -17,7 +18,7 @@ pub struct EventHandler {
 }
 
 const COLOR_BLACK: (f64, f64, f64) = (0.0, 0.0, 0.0);
-const INITIAL_RECTANGLE: labyrinth::Rectangle = labyrinth::Rectangle {
+const INITIAL_RECTANGLE: basic_types::Rectangle = basic_types::Rectangle {
     x: 0,
     y: 0,
     width: 0,
@@ -86,7 +87,7 @@ impl EventHandler {
     }
     fn draw(&mut self, labyrinth: &mut labyrinth::Labyrinth, cairo_context: &cairo::Context) {
         let extents = cairo_context.clip_extents();
-        let rectangle = labyrinth::Rectangle {
+        let rectangle = basic_types::Rectangle {
             x: extents.0 as u32,
             y: extents.1 as u32,
             width: (extents.2 - extents.0) as u32,

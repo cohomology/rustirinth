@@ -9,11 +9,13 @@ extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 extern crate ndarray;
+extern crate conv;
 
 mod main_window;
 mod game;
 mod event_handler;
 mod labyrinth;
+mod basic_types;
 
 fn run() -> Result<(), failure::Error> {
     let default_box_size = "64";
