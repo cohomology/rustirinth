@@ -5,8 +5,6 @@ use ndarray;
 
 use labyrinth;
 
-const COLOR_BLACK: (f64, f64, f64) = (0.0, 0.0, 0.0);
-
 #[derive(Debug)]
 struct RepaintInfo {
     rectangle: labyrinth::Rectangle,
@@ -18,18 +16,22 @@ pub struct EventHandler {
     to_be_painted: RepaintInfo,
 }
 
+const COLOR_BLACK: (f64, f64, f64) = (0.0, 0.0, 0.0);
+const INITIAL_RECTANGLE: labyrinth::Rectangle = labyrinth::Rectangle {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+};
+const INITIAL_REPAINT_INFO: RepaintInfo = RepaintInfo {
+    rectangle: INITIAL_RECTANGLE,
+    color: COLOR_BLACK,
+};
+
 impl EventHandler {
     pub fn new() -> EventHandler {
         EventHandler {
-            to_be_painted: RepaintInfo {
-                rectangle: labyrinth::Rectangle {
-                    x: 0,
-                    y: 0,
-                    width: 0,
-                    height: 0,
-                },
-                color: COLOR_BLACK,
-            },
+            to_be_painted: INITIAL_REPAINT_INFO,
         }
     }
     pub fn on_size_allocate(
@@ -92,6 +94,7 @@ impl EventHandler {
         };
         if rectangle == self.to_be_painted.rectangle {
             self.repaint_box(cairo_context);
+            self.to_be_painted = INITIAL_REPAINT_INFO;
         } else {
             self.trigger_complete_redraw(labyrinth, cairo_context);
         }
