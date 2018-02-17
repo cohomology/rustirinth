@@ -23,13 +23,13 @@ pub struct LabyrinthGame {
 }
 
 impl LabyrinthGame {
-    pub fn run(box_size : u32) -> Result<(), failure::Error> {
+    pub fn run(box_size: u32) -> Result<(), failure::Error> {
         gtk::init()?;
         let _ = LabyrinthGame::initialize_screen(box_size)?;
         gtk::main();
         Ok(())
     }
-    fn initialize_screen(box_size : u32) -> Result<LabyrinthGame, failure::Error> {
+    fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
             Some(screen) => Ok(LabyrinthGame::initialize_window(box_size, &screen)),
             None => Err(LabyrinthError::CouldNotGetDefaultScreen.into()),
@@ -44,7 +44,8 @@ impl LabyrinthGame {
                 event_handler::EventHandler::new(),
             )),
             state: std::rc::Rc::new(std::cell::RefCell::new(labyrinth::LabyrinthState::new(
-                box_size, requested_size,
+                box_size,
+                requested_size,
             ))),
         }.connect_delete_event()
             .connect_key_press_event()
@@ -74,15 +75,14 @@ impl LabyrinthGame {
         let state = self.state.clone();
         let event_handler = self.event_handler.clone();
         self.main_window
-            .window
-            .connect_button_press_event(move |myself, event| {
+            .drawing_area
+            .connect_button_press_event(move |drawing_area, event| {
                 let mut borrowed_state = state.borrow_mut();
-                if event_handler
-                    .borrow_mut()
-                    .on_button_press(&mut *borrowed_state, event)
-                {
-                    myself.queue_draw();
-                }
+                event_handler.borrow_mut().on_button_press(
+                    drawing_area,
+                    &mut *borrowed_state,
+                    event,
+                );
                 gtk::Inhibit(true)
             });
         self
@@ -119,14 +119,13 @@ impl LabyrinthGame {
         let state = self.state.clone();
         self.main_window
             .drawing_area
-            .connect_motion_notify_event(move |myself, event| {
+            .connect_motion_notify_event(move |drawing_area, event| {
                 let mut borrowed_state = state.borrow_mut();
-                if event_handler
-                    .borrow_mut()
-                    .on_motion_notify(&mut *borrowed_state, event)
-                {
-                    myself.queue_draw();
-                }
+                event_handler.borrow_mut().on_motion_notify(
+                    drawing_area,
+                    &mut *borrowed_state,
+                    event,
+                );
                 gtk::Inhibit(true)
             });
         self

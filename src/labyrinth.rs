@@ -1,7 +1,7 @@
 use std;
 use ndarray;
 
-#[derive(Debug)]
+#[derive(Eq, PartialEq, Debug, Hash, Copy, Clone)]
 pub struct Rectangle {
     pub x: u32,
     pub y: u32,
@@ -18,11 +18,11 @@ pub struct Labyrinth {
     pub x_box_cnt: u32,
     pub y_box_cnt: u32,
     pub marked: ndarray::ArrayD<bool>,
-    pub box_size: u32
+    pub box_size: u32,
 }
 
 impl Labyrinth {
-    pub fn new(box_size : u32, total_width: u32, total_height: u32) -> Labyrinth {
+    pub fn new(box_size: u32, total_width: u32, total_height: u32) -> Labyrinth {
         const MARGIN_FACTOR: u32 = 32;
         let left_margin = total_width / MARGIN_FACTOR;
         let top_margin = total_height / MARGIN_FACTOR;
@@ -41,14 +41,17 @@ impl Labyrinth {
                 x_box_cnt as usize,
                 y_box_cnt as usize,
             ])),
-            box_size : box_size
+            box_size: box_size,
         }
     }
     pub fn pixel_to_box(&self, (x, y): (u32, u32)) -> Option<(u32, u32)> {
         if x <= self.x || x >= self.x + self.width || y <= self.y || y >= self.y + self.height {
             None
         } else {
-            Some((((x - self.x) / self.box_size), ((y - self.y) / self.box_size)))
+            Some((
+                ((x - self.x) / self.box_size),
+                ((y - self.y) / self.box_size),
+            ))
         }
     }
     pub fn box_to_pixel(&self, (x_box, y_box): (u32, u32)) -> Option<Rectangle> {
@@ -74,11 +77,11 @@ pub struct LabyrinthState {
 }
 
 impl LabyrinthState {
-    pub fn new(box_size : u32, (width, height): (u32, u32)) -> LabyrinthState {
+    pub fn new(box_size: u32, (width, height): (u32, u32)) -> LabyrinthState {
         LabyrinthState {
             width: width,
             height: height,
-            box_size : box_size,
+            box_size: box_size,
             labyrinth: None,
         }
     }
