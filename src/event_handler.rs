@@ -92,13 +92,14 @@ impl EventHandler {
     }
     fn draw(&mut self, labyrinth: &mut labyrinth::Labyrinth, cairo_context: &cairo::Context) -> Result<(), failure::Error> {
         let extents = cairo_context.clip_extents();
-        let rectangle = basic_types::Rectangle::from(&extents)?;
+        let rectangle = basic_types::Rectangle::approx_from(&extents)?;
         if rectangle == self.to_be_painted.rectangle {
             self.repaint_box(cairo_context);
             self.to_be_painted = INITIAL_REPAINT_INFO;
         } else {
             self.trigger_complete_redraw(labyrinth, cairo_context);
         }
+        Ok(())
     }
     fn trigger_complete_redraw(
         &mut self,
@@ -150,18 +151,14 @@ impl EventHandler {
         }
         cairo_context.restore();
     }
-    fn repaint_box(&self, cairo_context: &cairo::Context) {
+    fn repaint_box(&self, cairo_context: &cairo::Context) -> Result<(), failure::Error> {
         let color = self.to_be_painted.color;
         let rectangle = self.to_be_painted.rectangle;
+        let float_rectangle : basic_types::GeneralRectangle<f64> = rectangle.to()?;
         cairo_context.save();
         cairo_context.set_source_rgb(color.0, color.1, color.2);
-        rectangle.call(&cairo_context.rectangle); 
-        // cairo_context.rectangle(
-        //     f64::from(rectangle.x),
-        //     f64::from(rectangle.y),
-        //     f64::from(rectangle.width),
-        //     f64::from(rectangle.height),
-        // );
+        cairo_context.rectangle(float_rectangle.x(), float_rectangle.y(), float_rectangle.width(), 
+                                float_rectangle.height());
         cairo_context.fill();
         cairo_context.restore();
     }

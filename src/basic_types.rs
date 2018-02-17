@@ -53,22 +53,24 @@ impl<T> IsARectangle<T> for (T, T, T, T) where T : Copy {
     fn height(&self) -> T { self.3 }
 }
 
-#[derive(Eq, PartialEq, Debug, Hash, Copy, Clone)]
-pub struct Rectangle {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
-} 
+#[derive(Debug, Copy, Clone)] 
+pub struct GeneralRectangle<T> where T : Eq + PartialEq + Copy + Clone + std::fmt::Debug {
+    pub x: T,
+    pub y: T,
+    pub width: T,
+    pub height: T,
+}  
 
-impl IsARectangle<u32> for Rectangle {
-    fn from_tuple( (x,y,width,height) : (u32, u32, u32, u32) ) -> Rectangle {
+pub type Rectangle = GeneralRectangle<u32>;
+
+impl<T> IsARectangle<T> for GeneralRectangle<T> {
+    fn from_tuple( (x,y,width,height) : (T, T, T, T) ) -> Rectangle {
         Rectangle { x,y,width,height }
     } 
-    fn x(&self) -> u32 { self.x }
-    fn y(&self) -> u32 { self.y }
-    fn width(&self) -> u32 { self.width }
-    fn height(&self) -> u32 { self.height }  
+    fn x(&self) -> T { self.x }
+    fn y(&self) -> T { self.y }
+    fn width(&self) -> T { self.width }
+    fn height(&self) -> T { self.height }  
 }
 
 impl Rectangle {
@@ -80,6 +82,14 @@ impl Rectangle {
         let height = Rectangle::convert(rectangle.height())?;
         Ok(Rectangle { x, y, width, height })
     }
+    pub fn approx_from<T,R>(rectangle :&R) -> Result<Rectangle, failure::Error> 
+        where R : IsARectangle<T>, u32 : conv::ApproxFrom<T>, T : Copy + std::fmt::Debug { 
+        let x = Rectangle::approx_convert(rectangle.x())?;
+        let y = Rectangle::approx_convert(rectangle.y())?;
+        let width = Rectangle::approx_convert(rectangle.width())?;
+        let height = Rectangle::approx_convert(rectangle.height())?;
+        Ok(Rectangle { x, y, width, height }) 
+    }
     pub fn to<T, R>(&self) -> Result<R, failure::Error> 
         where R : IsARectangle<T>, T : conv::ValueFrom<u32> + Copy + std::fmt::Debug {
         let x = Rectangle::convert(self.x)?;
@@ -88,12 +98,6 @@ impl Rectangle {
         let height = Rectangle::convert(self.height)?;
         Ok(R::from_tuple((x,y,width,height)))
     }
-    pub fn call<F, R, S>(&self, f : F) -> Result<S, failure::Error> where F : FnMut(R, R, R, R) -> S {
-        match self.to::<R, (R, R, R, R)>()  {
-            Some((x,y,width,height)) => f(x,y,width,height),
-            Err(error) => Err(error)
-        }
-    } 
     fn convert<T, S>(value : T) -> Result<S, failure::Error> 
         where S : conv::ValueFrom<T> + Copy + std::fmt::Debug, T : std::fmt::Debug + std::marker::Copy {
         use conv::ValueInto;
@@ -103,6 +107,15 @@ impl Rectangle {
             Err(LabyrinthError::ConversionError { value : format!("{:?}", value) }.into())
         }
     }
+    fn approx_convert<T, S>(value : T) -> Result<S, failure::Error> 
+        where S : conv::ApproxFrom<T> + Copy + std::fmt::Debug, T : std::fmt::Debug + std::marker::Copy {
+        use conv::ApproxInto;
+        if let Ok(value) = value.approx_into() {
+            Ok(value)
+        } else {
+            Err(LabyrinthError::ConversionError { value : format!("{:?}", value) }.into())
+        }
+    } 
 }
 
 trait IsARectangularArea<T> {
