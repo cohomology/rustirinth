@@ -86,13 +86,19 @@ impl LabyrinthGame {
         let state = self.state.clone();
         let event_handler = self.event_handler.clone();
         self.main_window
-            .drawing_area
-            .connect_size_allocate(move |_, rect| {
-                let mut borrowed_state = state.borrow_mut();
-                event_handler
-                    .borrow_mut()
-                    .on_size_allocate(&mut *borrowed_state, rect);
-            });
+                .drawing_area
+                .connect_size_allocate(move |_, rect| { 
+                    let rectangle = basic_types::Rectangle::from(rect); 
+                    match rectangle {
+                        Ok(rectangle) => {
+                            let mut borrowed_state = state.borrow_mut();
+                            event_handler
+                                .borrow_mut()
+                                .on_size_allocate(&mut *borrowed_state, &rectangle)
+                        }, 
+                        Err(_) => panic!("Could not allocate rectangle of size: {:?}", rect)
+                    }
+                });
         self
     }
     fn connect_on_draw_event(self) -> Self {
@@ -102,7 +108,7 @@ impl LabyrinthGame {
             .drawing_area
             .connect_draw(move |_, cairo_context| {
                 let mut borrowed_state = state.borrow_mut();
-                event_handler
+                let _ = event_handler     // FIXME!!
                     .borrow_mut()
                     .on_draw(&mut *borrowed_state, cairo_context);
                 gtk::Inhibit(true)

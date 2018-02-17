@@ -1,10 +1,13 @@
 use cairo;
 use gtk;
 use gdk;
+use failure;
 use ndarray;
 
 use basic_types;
 use labyrinth;
+
+use basic_types::IsARectangle;
 
 #[derive(Debug)]
 struct RepaintInfo {
@@ -38,7 +41,7 @@ impl EventHandler {
     pub fn on_size_allocate(
         &mut self,
         state: &mut labyrinth::LabyrinthState,
-        rect: &gtk::Rectangle,
+        rect: &basic_types::Rectangle,
     ) {
         if rect.width > 0 && rect.height > 0 {
             state.width = rect.width as u32;
@@ -58,9 +61,11 @@ impl EventHandler {
         &mut self,
         state: &mut labyrinth::LabyrinthState,
         cairo_context: &cairo::Context,
-    ) {
+    ) -> Result<(), failure::Error> {
         if let Some(labyrinth) = state.labyrinth.as_mut() {
-            self.draw(labyrinth, cairo_context);
+            self.draw(labyrinth, cairo_context)
+        } else {
+            Ok(())
         }
     }
     pub fn on_button_press(
@@ -85,14 +90,9 @@ impl EventHandler {
             }
         }
     }
-    fn draw(&mut self, labyrinth: &mut labyrinth::Labyrinth, cairo_context: &cairo::Context) {
+    fn draw(&mut self, labyrinth: &mut labyrinth::Labyrinth, cairo_context: &cairo::Context) -> Result<(), failure::Error> {
         let extents = cairo_context.clip_extents();
-        let rectangle = basic_types::Rectangle {
-            x: extents.0 as u32,
-            y: extents.1 as u32,
-            width: (extents.2 - extents.0) as u32,
-            height: (extents.3 - extents.1) as u32,
-        };
+        let rectangle = basic_types::Rectangle::from(&extents)?;
         if rectangle == self.to_be_painted.rectangle {
             self.repaint_box(cairo_context);
             self.to_be_painted = INITIAL_REPAINT_INFO;
@@ -155,12 +155,13 @@ impl EventHandler {
         let rectangle = self.to_be_painted.rectangle;
         cairo_context.save();
         cairo_context.set_source_rgb(color.0, color.1, color.2);
-        cairo_context.rectangle(
-            f64::from(rectangle.x),
-            f64::from(rectangle.y),
-            f64::from(rectangle.width),
-            f64::from(rectangle.height),
-        );
+        rectangle.call(&cairo_context.rectangle); 
+        // cairo_context.rectangle(
+        //     f64::from(rectangle.x),
+        //     f64::from(rectangle.y),
+        //     f64::from(rectangle.width),
+        //     f64::from(rectangle.height),
+        // );
         cairo_context.fill();
         cairo_context.restore();
     }
