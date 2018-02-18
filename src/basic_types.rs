@@ -15,6 +15,12 @@ pub enum LabyrinthError {
     }
 } 
 
+#[derive(Eq,PartialEq,Copy,Clone,Debug)]
+pub struct Point {
+    x : u32,
+    y : u32
+} 
+
 pub trait IsARectangle<T> {
     fn from_tuple(tuple : (T, T, T, T)) -> Self;
     fn x(&self) -> T;
@@ -185,6 +191,85 @@ impl<T> IsAColor<T> for GeneralColor<T> where f64 : From<T>, T : From<u32> + Cop
 
 pub type Color = GeneralColor<f64>;
 
+#[derive(Debug,Clone,Eq,PartialEq,Default)]
+pub struct BoardVector<T> where T : Default + Clone {
+    vector : std::vec::Vec<T>,
+    x_dim : u32,
+    y_dim : u32
+}
+
+impl<T> BoardVector<T> where T : Default + Clone {
+    fn new((x_dim, y_dim) : (u32, u32)) -> BoardVector<T> {
+        let mut vector = std::vec::Vec::new();
+        vector.resize((x_dim * y_dim) as usize, Default::default());
+        BoardVector { vector, x_dim, y_dim }
+    }
+    fn get(&self, (x,y) : (u32, u32)) -> Option<&T> {
+        self.vector.get((y * self.x_dim + x) as usize)
+    }               
+    fn get_mut(&mut self, (x,y) : (u32, u32)) -> Option<&mut T> { 
+        self.vector.get_mut((y * self.x_dim + x) as usize) 
+    }
+    fn iter(&self) -> std::slice::Iter<T> {
+        self.vector.iter()
+    }
+    fn iter_mut(&mut self) -> std::slice::IterMut<T> {
+        self.vector.iter_mut()
+    }
+    fn board_iter(&self, start : (u32, u32), end : (u32, u32)) -> BoardIterator<T> {
+        BoardIterator::new(self, start, end)
+    }
+}
+
+impl<T> std::ops::Index<u32> for BoardVector<T> where T : Default + Clone {
+    type Output = T;
+    fn index(&self, index: u32) -> &T {
+        self.vector.index(index as usize)
+    }
+}
+
+impl<T> std::ops::IndexMut<u32> for BoardVector<T> where T : Default + Clone {
+    fn index_mut(&mut self, index: u32) -> &mut T {
+        self.vector.index_mut(index as usize)
+    }
+} 
+
+pub struct BoardIterator<'a, T : 'a> where T : Default + Clone {
+    start : Point,
+    end : Point,
+    current : Point,
+    inner : &'a BoardVector<T>,
+} 
+
+impl<'a, T> BoardIterator<'a, T> where T : Default + Clone, T : 'a {
+    fn new(board : &'a BoardVector<T>, start : (u32, u32), end : (u32, u32)) -> BoardIterator<'a, T> {
+        BoardIterator { 
+            start : Point { x : std::cmp::min(start.0, board.x_dim - 1), y : std::cmp::min(start.1, board.y_dim - 1) },
+            end :  Point { x : std::cmp::min(end.0, board.x_dim - 1), y : std::cmp::min(end.1, board.y_dim) },
+            current : Point { x : start.0, y : start.1 },  
+            inner : board,
+        }
+    }
+}
+
+impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current = self.current;
+        if current.x > self.end.x || current.y > self.end.y {
+            return None
+        }
+        if self.current.x == self.end.x {
+            self.current.x = self.start.x;
+            self.current.y += 1; 
+        } else {
+            self.current.x += 1;
+        }
+        self.inner.get((current.x, current.y)) 
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -250,5 +335,29 @@ mod tests {
         let float_tuple = rectangle.approx_to::<f64, (f64, f64, f64, f64)>().unwrap();
         assert_eq!(float_tuple, (( 1.0, 4294967295.0, 3.0, 4.0))); 
     } 
+
+    #[test]
+    fn board_iterator() {
+        let mut vector = BoardVector::<u32>::new((5, 5));
+        let cnt = vector.iter().count();
+        assert_eq!(cnt, 25);
+        for (cnt, elem) in vector.iter_mut().enumerate() {
+            *elem = cnt as u32; 
+        }
+        let board_cnt = vector.board_iter((1,1), (1,1)).count();
+        assert_eq!(board_cnt, 1); 
+
+        let mut iter = vector.board_iter((1,1), (1,1));
+        let item = iter.next().unwrap();
+        assert_eq!(*item, 6);    // starts from 0
+        
+        let mut board_iter =  vector.board_iter((4,3), (10,10)); 
+        let item = board_iter.next().unwrap();
+        assert_eq!(*item, 19);  
+        let item = board_iter.next().unwrap(); 
+        assert_eq!(*item, 24);   
+        let item = board_iter.next();
+        assert_eq!(item, None);
+    }  
 }
 
