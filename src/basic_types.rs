@@ -107,23 +107,24 @@ impl<U> GeneralRectangle<U> where U : Copy + Clone + std::fmt::Debug {
         let height = Rectangle::convert(self.height)?;
         Ok(R::from_tuple((x,y,width,height)))
     }
+    pub fn approx_to<T, R>(&self) -> Result<R, failure::Error> 
+        where R : IsARectangle<T>, T : conv::ApproxFrom<U> + Copy + std::fmt::Debug {
+        let x = Rectangle::approx_convert(self.x)?;
+        let y = Rectangle::approx_convert(self.y)?;
+        let width = Rectangle::approx_convert(self.width)?;
+        let height = Rectangle::approx_convert(self.height)?;
+        Ok(R::from_tuple((x,y,width,height)))
+    } 
+    fn raise_error<T>(value : T) -> failure::Error where T : std::fmt::Debug {
+        LabyrinthError::ConversionError { value : format!("{:?}", value) }.into()
+    }
     fn convert<T, S>(value : T) -> Result<S, failure::Error> 
         where S : conv::ValueFrom<T> + Copy + std::fmt::Debug, T : std::fmt::Debug + std::marker::Copy {
-        use conv::ValueInto;
-        if let Ok(value) = value.value_into() {
-            Ok(value)
-        } else {
-            Err(LabyrinthError::ConversionError { value : format!("{:?}", value) }.into())
-        }
+        conv::ValueInto::value_into(value).map_err(|_| GeneralRectangle::<U>::raise_error(value))
     }
     fn approx_convert<T, S>(value : T) -> Result<S, failure::Error> 
         where S : conv::ApproxFrom<T> + Copy + std::fmt::Debug, T : std::fmt::Debug + std::marker::Copy {
-        use conv::ApproxInto;
-        if let Ok(value) = value.approx_into() {
-            Ok(value)
-        } else {
-            Err(LabyrinthError::ConversionError { value : format!("{:?}", value) }.into())
-        }
+        conv::ApproxInto::approx_into(value).map_err(|_| GeneralRectangle::<U>::raise_error(value)) 
     } 
 }
 
@@ -142,19 +143,70 @@ impl<T, R> IsARectangularArea<T> for R
     fn bottom_right_y(&self) -> T { self.y() + self.height() }  
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use cairo;
-//     use std;
-//     #[test]
-//     fn from_cairo() {
-//         let cairo = cairo::RectangleInt {
-//             x : 0,
-//             y : 0,
-//             width : 0,
-//             height : 0
-//         };
-//         let my : Rectangle = std::convert::From<&cairo::Rectangle>(&cairo);
-//     }
-// }
+#[cfg(test)]
+mod tests {
+
+    use cairo;
+    use gtk;
+    use super::*;
+
+    #[test]
+    fn from_cairo_ok() {
+        let cairo_rectangle = cairo::RectangleInt { x : 1, y : 2, width : 3, height : 4 };
+        let rectangle = Rectangle::from(&cairo_rectangle).unwrap();
+        assert_eq!(rectangle, Rectangle { x: 1, y: 2, width: 3, height: 4 });
+    }
+
+    #[test]
+    fn from_cairo_err() {
+        let cairo_rectangle = cairo::RectangleInt { x : -1, y : 2, width : 3, height : 4 };
+        let rectangle = Rectangle::from(&cairo_rectangle);
+        assert!(rectangle.is_err());
+        let error = rectangle.err().unwrap();
+        let error_string = format!("{}", error); 
+        assert_eq!(error_string, "Conversion error or overflow while converting \"-1\"");
+    } 
+
+    #[test]
+    fn from_gtk_ok() {
+        let gtk_rectangle = gtk::Rectangle { x : 1, y : 2, width : 3, height : 4 };
+        let rectangle = Rectangle::from(&gtk_rectangle).unwrap();
+        assert_eq!(rectangle, Rectangle { x: 1, y: 2, width: 3, height: 4 });
+    }
+
+    #[test]
+    fn to_float_tuple() {
+        type Ftuple = (f64, f64, f64, f64);
+        let rectangle = Rectangle { x: 1, y: 2, width: 3, height: 4 };
+        let float_tuple : Ftuple = rectangle.to().unwrap();
+        assert_eq!(float_tuple, (1.0, 2.0, 3.0, 4.0));
+    } 
+
+    #[test]
+    fn general_rectangle_overflow() {
+        let big_rectangle = GeneralRectangle::<u64> { x: 1, y: 4_294_967_296, width:3, height:4};
+        let rectangle = big_rectangle.to::<u32, Rectangle>();
+        assert!(rectangle.is_err());
+        let error = rectangle.err().unwrap();
+        let error_string = format!("{}", error); 
+        assert_eq!(error_string, "Conversion error or overflow while converting \"4294967296\""); 
+    } 
+
+    #[test]
+    fn float_overflow() {
+        let big_rectangle = ( 1.0, 4294967296.0, 3.0, 4.0 );
+        let rectangle = Rectangle::approx_from(&big_rectangle);
+        assert!(rectangle.is_err());
+        let error = rectangle.err().unwrap();
+        let error_string = format!("{}", error); 
+        assert_eq!(error_string, "Conversion error or overflow while converting \"4294967296.0\""); 
+    } 
+
+    #[test]
+    fn to_float() {
+        let rectangle = Rectangle::from::<u32, (u32, u32, u32, u32)>(&( 1, 4294967295, 3, 4)).unwrap();
+        let float_tuple = rectangle.approx_to::<f64, (f64, f64, f64, f64)>().unwrap();
+        assert_eq!(float_tuple, (( 1.0, 4294967295.0, 3.0, 4.0))); 
+    } 
+}
 
