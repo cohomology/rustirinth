@@ -128,7 +128,7 @@ impl<U> GeneralRectangle<U> where U : Copy + Clone + std::fmt::Debug {
     } 
 }
 
-trait IsARectangularArea<T> {
+pub trait IsARectangularArea<T> {
     fn top_left_x(&self) -> T;
     fn top_left_y(&self) -> T;
     fn bottom_right_x(&self) -> T; 
@@ -142,6 +142,48 @@ impl<T, R> IsARectangularArea<T> for R
     fn bottom_right_x(&self) -> T { self.x() + self.width() } 
     fn bottom_right_y(&self) -> T { self.y() + self.height() }  
 }
+
+pub trait IsAColor<T> where T : Copy {
+    fn from_tuple(tuple : (T, T, T)) -> Self;
+    fn to_tuple(&self) -> (T, T, T) {
+        (self.red(), self.green(), self.blue())
+    }
+    fn to_float_tuple(&self) -> (f64, f64, f64);
+    fn red(&self) -> T;
+    fn green(&self) -> T;
+    fn blue(&self) -> T; 
+
+    fn get_white() -> Self;
+    fn get_black() -> Self;
+}
+
+pub struct GeneralColor<T> where f64 : From<T>, T : From<u32> + Copy {
+    red : T,
+    green : T,
+    blue : T, 
+}
+
+impl<T> IsAColor<T> for GeneralColor<T> where f64 : From<T>, T : From<u32> + Copy {
+    fn from_tuple((red, green, blue) : (T, T, T)) -> GeneralColor<T> {
+        GeneralColor::<T> { red, green, blue }
+    }
+    fn to_float_tuple(&self) -> (f64, f64, f64) {
+        (self.red.into(), self.green.into(), self.blue.into())
+    }
+    fn red(&self) -> T { self.red }
+    fn blue(&self) -> T { self.blue }
+    fn green(&self) -> T { self.green }
+
+    fn get_black() -> GeneralColor<T> { 
+        GeneralColor::<T>::from_tuple((0.into(), 0.into(), 0.into()))
+    }
+
+    fn get_white() -> GeneralColor<T> { 
+        GeneralColor::<T>::from_tuple((255.into(), 255.into(), 255.into()))
+    } 
+}
+
+pub type Color = GeneralColor<f64>;
 
 #[cfg(test)]
 mod tests {
