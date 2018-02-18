@@ -288,7 +288,7 @@ impl BoardIteratorBase where {
         } else {
             self.current.x += 1;
         }    
-        return None;
+        return Some(current);
     } 
 } 
 
@@ -306,6 +306,18 @@ impl<'a, T> BoardIterator<'a, T> where T : Default + Clone, T : 'a {
     }
 } 
 
+impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(point) = self.inner.advance() {
+            self.vector.get(point)
+        } else {
+            None
+        }
+    }
+} 
+
 pub struct BoardIteratorMut<'a, T : 'a> where  T: Default + Clone {
     iterator : std::slice::IterMut<'a, T>,
     inner : BoardIteratorBase,
@@ -314,26 +326,18 @@ pub struct BoardIteratorMut<'a, T : 'a> where  T: Default + Clone {
 impl<'a, T> BoardIteratorMut<'a, T> where T : Default + Clone, T : 'a {
     fn new<P>(vector : &'a mut BoardVector<T>, start : P, end : P) -> BoardIteratorMut<'a, T> where P : Into<(u32, u32)> {
         BoardIteratorMut { 
+            inner : BoardIteratorBase::new(start, end, vector.x_dim, vector.y_dim), 
             iterator : vector.iter_mut(),
-            inner : BoardIteratorBase::new(start, end, vector.x_dim, vector.y_dim),
         }
     }
 } 
 
-impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
-    type Item = &'a T;
+// impl<'a, T> Iterator for BoardIteratorMut<'a, T> where T : Default + Clone {
+//     type Item = &'a mut T;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        
-    }
-}
-
-impl<'a, T> Iterator for BoardIteratorMut<'a, T> where T : Default + Clone {
-    type Item = &'a mut T;
-
-    fn next(&mut self) -> Option<&mut T> {
-    }
-} 
+//     fn next(&mut self) -> Option<&mut T> {
+//     }
+// } 
 
 #[cfg(test)]
 mod tests {
