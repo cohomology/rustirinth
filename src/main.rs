@@ -40,13 +40,6 @@ fn run() -> Result<(), failure::Error> {
 
 fn main() {
     if let Err(ref e) = run() {
-        use std::io::Write;
-        let stderr = &mut ::std::io::stderr();
-        let _ = writeln!(stderr, "Error: {}", e);
-        let mut fail: &failure::Fail = e.cause();
-        while let Some(cause) = fail.cause() {
-            let _ = writeln!(stderr, "Caused by: {}", cause);
-            fail = cause;
-        }
+        game::LabyrinthGame::fatal_error(e);
     }
 }

@@ -24,6 +24,17 @@ impl LabyrinthGame {
         gtk::main();
         Ok(())
     }
+    pub fn fatal_error(error : &failure::Error) {
+        use std::io::Write;
+        let stderr = &mut ::std::io::stderr();
+        let _ = writeln!(stderr, "Error: {}", error);
+        let mut fail: &failure::Fail = error.cause();
+        while let Some(cause) = fail.cause() {
+            let _ = writeln!(stderr, "Caused by: {}", cause);
+            fail = cause;
+        }    
+        std::process::exit(-1);
+    } 
     fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
             Some(screen) => Ok(LabyrinthGame::initialize_window(box_size, &screen)),
@@ -96,7 +107,7 @@ impl LabyrinthGame {
                                 .borrow_mut()
                                 .on_size_allocate(&mut *borrowed_state, &rectangle)
                         }, 
-                        Err(_) => panic!("Could not allocate rectangle of size: {:?}", rect)
+                        Err(e) => LabyrinthGame::fatal_error(&e)
                     }
                 });
         self
@@ -108,9 +119,9 @@ impl LabyrinthGame {
             .drawing_area
             .connect_draw(move |_, cairo_context| {
                 let mut borrowed_state = state.borrow_mut();
-                let _ = event_handler     // FIXME!!
-                    .borrow_mut()
-                    .on_draw(&mut *borrowed_state, cairo_context);
+                event_handler.borrow_mut()
+                             .on_draw(&mut *borrowed_state, cairo_context)
+                             .unwrap_or_else(|e| LabyrinthGame::fatal_error(&e));
                 gtk::Inhibit(true)
             });
         self

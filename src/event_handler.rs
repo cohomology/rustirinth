@@ -96,20 +96,20 @@ impl EventHandler {
         if rectangle == self.to_be_painted.rectangle {
             self.repaint_box(cairo_context)?;
             self.to_be_painted = INITIAL_REPAINT_INFO;
+            Ok(())
         } else {
-            self.trigger_complete_redraw(labyrinth, cairo_context);
+            self.trigger_complete_redraw(labyrinth, cairo_context)
         }
-        Ok(())
     }
     fn trigger_complete_redraw(
         &mut self,
         labyrinth: &mut labyrinth::Labyrinth,
         cairo_context: &cairo::Context,
-    ) {
+    ) -> Result<(), failure::Error> {
         cairo_context.reset_clip();
         self.clear_surface(cairo_context);
         self.draw_axes(labyrinth, cairo_context);
-        self.draw_marked_boxes(labyrinth, cairo_context);
+        self.draw_marked_boxes(labyrinth, cairo_context)
     }
     fn clear_surface(&self, cairo_context: &cairo::Context) {
         cairo_context.save();
@@ -135,21 +135,19 @@ impl EventHandler {
         &mut self,
         labyrinth: &mut labyrinth::Labyrinth,
         cairo_context: &cairo::Context,
-    ) {
+    ) -> Result<(), failure::Error> {
         cairo_context.save();
         for (index, _) in labyrinth.marked.indexed_iter().filter(|&(_, &elem)| elem) {
             let (x_box, y_box) = (index[0] as u32, index[1] as u32);
             if let Some(rectangle) = labyrinth.box_to_pixel((x_box, y_box)) {
-                cairo_context.rectangle(
-                    f64::from(rectangle.x),
-                    f64::from(rectangle.y),
-                    f64::from(rectangle.width),
-                    f64::from(rectangle.height),
-                );
+                let float_rectangle : basic_types::GeneralRectangle<f64> = rectangle.to()?; 
+                cairo_context.rectangle(float_rectangle.x(), float_rectangle.y(), float_rectangle.width(), 
+                                        float_rectangle.height()); 
                 cairo_context.fill();
             }
         }
         cairo_context.restore();
+        Ok(())
     }
     fn repaint_box(&self, cairo_context: &cairo::Context) -> Result<(), failure::Error> {
         let color = self.to_be_painted.color;
