@@ -21,6 +21,18 @@ pub struct Point {
     y : u32
 } 
 
+impl From<(u32, u32)> for Point {
+    fn from((x,y) : (u32, u32)) -> Point {
+        Point { x, y }
+    }
+}
+
+impl From<Point> for (u32, u32) {
+    fn from(p : Point) -> (u32, u32) {
+        (p.x, p.y)
+    } 
+}
+
 pub trait IsARectangle<T> {
     fn from_tuple(tuple : (T, T, T, T)) -> Self;
     fn x(&self) -> T;
@@ -199,15 +211,18 @@ pub struct BoardVector<T> where T : Default + Clone {
 }
 
 impl<T> BoardVector<T> where T : Default + Clone {
-    fn new((x_dim, y_dim) : (u32, u32)) -> BoardVector<T> {
+    fn new<P>(p : P) -> BoardVector<T> where P : Into<(u32, u32)> {
         let mut vector = std::vec::Vec::new();
+        let (x_dim, y_dim) : (u32, u32) = p.into();
         vector.resize((x_dim * y_dim) as usize, Default::default());
         BoardVector { vector, x_dim, y_dim }
     }
-    fn get(&self, (x,y) : (u32, u32)) -> Option<&T> {
+    fn get<P>(&self, p : P) -> Option<&T> where P : Into<(u32, u32)> {
+        let (x,y) : (u32, u32) = p.into();
         self.vector.get((y * self.x_dim + x) as usize)
     }               
-    fn get_mut(&mut self, (x,y) : (u32, u32)) -> Option<&mut T> { 
+    fn get_mut<P>(&mut self, p : P) -> Option<&mut T> where P : Into<(u32, u32)> { 
+        let (x,y) : (u32, u32) = p.into(); 
         self.vector.get_mut((y * self.x_dim + x) as usize) 
     }
     fn iter(&self) -> std::slice::Iter<T> {
@@ -216,8 +231,8 @@ impl<T> BoardVector<T> where T : Default + Clone {
     fn iter_mut(&mut self) -> std::slice::IterMut<T> {
         self.vector.iter_mut()
     }
-    fn board_iter(&self, start : (u32, u32), end : (u32, u32)) -> BoardIterator<T> {
-        BoardIterator::new(self, start, end)
+    fn board_iter<P>(&self, start : P, end : P) -> BoardIterator<T> where P : Into<(u32, u32)> {
+        BoardIterator::new(self, start.into(), end.into())
     }
 }
 
@@ -243,9 +258,16 @@ pub struct BoardIterator<'a, T : 'a> where T : Default + Clone {
 
 impl<'a, T> BoardIterator<'a, T> where T : Default + Clone, T : 'a {
     fn new(board : &'a BoardVector<T>, start : (u32, u32), end : (u32, u32)) -> BoardIterator<'a, T> {
+        use std::cmp::{min, max};
         BoardIterator { 
-            start : Point { x : std::cmp::min(start.0, board.x_dim - 1), y : std::cmp::min(start.1, board.y_dim - 1) },
-            end :  Point { x : std::cmp::min(end.0, board.x_dim - 1), y : std::cmp::min(end.1, board.y_dim) },
+            start : Point { 
+                x : min(start.0, max(board.x_dim, 1) - 1), 
+                y : min(start.1, max(board.y_dim, 1) - 1) 
+            },
+            end :  Point { 
+                x : min(end.0, max(board.x_dim, 1) - 1), 
+                y : min(end.1, max(board.y_dim, 1) - 1) 
+            },
             current : Point { x : start.0, y : start.1 },  
             inner : board,
         }
@@ -257,7 +279,8 @@ impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current;
-        if current.x > self.end.x || current.y > self.end.y {
+        if self.inner.x_dim == 0 || self.inner.y_dim == 0 || 
+            current.x > self.end.x || current.y > self.end.y {
             return None
         }
         if self.current.x == self.end.x {
@@ -266,7 +289,7 @@ impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
         } else {
             self.current.x += 1;
         }
-        self.inner.get((current.x, current.y)) 
+        self.inner.get(current)
     }
 }
 
@@ -359,5 +382,12 @@ mod tests {
         let item = board_iter.next();
         assert_eq!(item, None);
     }  
+
+    #[test]
+    fn board_iterator_corner_case() {
+        let vector = BoardVector::<u32>::new((0, 0));
+        let cnt = vector.board_iter((0,0), (10,10)).count();
+        assert_eq!(cnt, 0);
+    } 
 }
 
