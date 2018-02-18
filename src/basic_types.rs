@@ -234,6 +234,9 @@ impl<T> BoardVector<T> where T : Default + Clone {
     fn board_iter<P>(&self, start : P, end : P) -> BoardIterator<T> where P : Into<(u32, u32)> {
         BoardIterator::new(self, start.into(), end.into())
     }
+    fn board_iter_mut<'a, P>(&'a mut self, start : P, end : P) -> BoardIteratorMut<'a, T> where P : Into<(u32, u32)> {
+        BoardIteratorMut::new(self, start.into(), end.into())
+    } 
 }
 
 impl<T> std::ops::Index<u32> for BoardVector<T> where T : Default + Clone {
@@ -249,38 +252,34 @@ impl<T> std::ops::IndexMut<u32> for BoardVector<T> where T : Default + Clone {
     }
 } 
 
-pub struct BoardIterator<'a, T : 'a> where T : Default + Clone {
+pub struct BoardIteratorBase {
     start : Point,
     end : Point,
     current : Point,
-    inner : &'a BoardVector<T>,
+    invalid : bool,
 } 
 
-impl<'a, T> BoardIterator<'a, T> where T : Default + Clone, T : 'a {
-    fn new(board : &'a BoardVector<T>, start : (u32, u32), end : (u32, u32)) -> BoardIterator<'a, T> {
+impl BoardIteratorBase where {
+    fn new<P>(start : P, end : P, x_dim : u32, y_dim : u32) -> BoardIteratorBase where P : Into<(u32, u32)> {
         use std::cmp::{min, max};
-        BoardIterator { 
+        let start : (u32, u32) = start.into();
+        let end : (u32, u32) = end.into();
+        BoardIteratorBase { 
             start : Point { 
-                x : min(start.0, max(board.x_dim, 1) - 1), 
-                y : min(start.1, max(board.y_dim, 1) - 1) 
+                x : min(start.0, max(x_dim, 1) - 1), 
+                y : min(start.1, max(y_dim, 1) - 1) 
             },
             end :  Point { 
-                x : min(end.0, max(board.x_dim, 1) - 1), 
-                y : min(end.1, max(board.y_dim, 1) - 1) 
+                x : min(end.0, max(x_dim, 1) - 1), 
+                y : min(end.1, max(y_dim, 1) - 1) 
             },
             current : Point { x : start.0, y : start.1 },  
-            inner : board,
+            invalid : x_dim == 0 || y_dim == 0
         }
     }
-}
-
-impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn advance(&mut self) -> Option<Point> {
         let current = self.current;
-        if self.inner.x_dim == 0 || self.inner.y_dim == 0 || 
-            current.x > self.end.x || current.y > self.end.y {
+        if self.invalid || current.x > self.end.x || current.y > self.end.y {
             return None
         }
         if self.current.x == self.end.x {
@@ -288,10 +287,53 @@ impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
             self.current.y += 1; 
         } else {
             self.current.x += 1;
+        }    
+        return None;
+    } 
+} 
+
+pub struct BoardIterator<'a, T : 'a> where T : Default + Clone {
+    vector : &'a BoardVector<T>,
+    inner : BoardIteratorBase,
+} 
+
+impl<'a, T> BoardIterator<'a, T> where T : Default + Clone, T : 'a {
+    fn new<P>(vector : &'a BoardVector<T>, start : P, end : P) -> BoardIterator<'a, T> where P : Into<(u32, u32)> {
+        BoardIterator { 
+            vector : vector,
+            inner : BoardIteratorBase::new(start, end, vector.x_dim, vector.y_dim),
         }
-        self.inner.get(current)
+    }
+} 
+
+pub struct BoardIteratorMut<'a, T : 'a> where  T: Default + Clone {
+    iterator : std::slice::IterMut<'a, T>,
+    inner : BoardIteratorBase,
+}
+
+impl<'a, T> BoardIteratorMut<'a, T> where T : Default + Clone, T : 'a {
+    fn new<P>(vector : &'a mut BoardVector<T>, start : P, end : P) -> BoardIteratorMut<'a, T> where P : Into<(u32, u32)> {
+        BoardIteratorMut { 
+            iterator : vector.iter_mut(),
+            inner : BoardIteratorBase::new(start, end, vector.x_dim, vector.y_dim),
+        }
+    }
+} 
+
+impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        
     }
 }
+
+impl<'a, T> Iterator for BoardIteratorMut<'a, T> where T : Default + Clone {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<&mut T> {
+    }
+} 
 
 #[cfg(test)]
 mod tests {
