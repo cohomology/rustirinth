@@ -310,25 +310,30 @@ impl<'a, T> Iterator for BoardIterator<'a, T> where T : Default + Clone {
 } 
 
 pub struct BoardIteratorMut<'a, T : 'a> where  T: Default + Clone {
-    iterator : std::slice::IterMut<'a, T>,
-    inner : BoardIteratorBase,
+    vector : &'a mut BoardVector<T>,
+    inner : BoardIteratorBase, 
 }
 
 impl<'a, T> BoardIteratorMut<'a, T> where T : Default + Clone, T : 'a {
     fn new<P>(vector : &'a mut BoardVector<T>, start : P, end : P) -> BoardIteratorMut<'a, T> where P : Into<(u32, u32)> {
         BoardIteratorMut { 
             inner : BoardIteratorBase::new(start, end, vector.x_dim, vector.y_dim), 
-            iterator : vector.iter_mut(),
+            vector : vector
         }
     }
 } 
 
-// impl<'a, T> Iterator for BoardIteratorMut<'a, T> where T : Default + Clone {
-//     type Item = &'a mut T;
+impl<'a, T> Iterator for BoardIteratorMut<'a, T> where T : Default + Clone {
+    type Item = &'a mut T;
 
-//     fn next(&mut self) -> Option<&mut T> {
-//     }
-// } 
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(point) = self.inner.advance() {
+            self.vector.get_mut(point)
+        } else {
+            None
+        } 
+    }
+} 
 
 #[cfg(test)]
 mod tests {
