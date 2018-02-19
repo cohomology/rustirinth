@@ -71,7 +71,7 @@ impl<T> IsARectangle<T> for (T, T, T, T) where T : Copy {
     fn height(&self) -> T { self.3 }
 }
 
-#[derive(Debug, Copy, Clone)] 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)] 
 pub struct GeneralRectangle<T> where T : Copy + Clone + std::fmt::Debug {
     pub x: T,
     pub y: T,
@@ -80,15 +80,6 @@ pub struct GeneralRectangle<T> where T : Copy + Clone + std::fmt::Debug {
 }  
 
 pub type Rectangle = GeneralRectangle<u32>;
-
-impl<T> PartialEq for GeneralRectangle<T> where T : PartialEq + Copy + Clone + std::fmt::Debug {
-   fn eq(&self, other: &GeneralRectangle<T>) -> bool {
-       self.x == other.x && 
-       self.y == other.y && 
-       self.width == other.width && 
-       self.height == other.height
-   }
-}
 
 impl<T> IsARectangle<T> for GeneralRectangle<T> where T : Copy + Clone + std::fmt::Debug {
     fn from_tuple( (x,y,width,height) : (T, T, T, T) ) -> GeneralRectangle<T> {
