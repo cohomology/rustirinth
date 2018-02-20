@@ -108,7 +108,7 @@ where
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, PartialOrd)]
 pub struct GeneralRectangle<T>
 where
     T: Copy + Clone + Default + std::fmt::Debug,
@@ -149,7 +149,7 @@ where
 
 impl<U> GeneralRectangle<U>
 where
-    U: Copy + Clone + Default + std::fmt::Debug,
+    U: Copy + Clone + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = U>  
 {
     pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, failure::Error>
     where
@@ -206,6 +206,29 @@ where
         let width = Rectangle::approx_convert(self.width)?;
         let height = Rectangle::approx_convert(self.height)?;
         Ok(R::from_tuple((x, y, width, height)))
+    }
+    fn intersect(&self, other : &GeneralRectangle<U>) -> Option<GeneralRectangle<U>> {
+        use std::cmp::{partial_max,partial_mix};
+        if self.inside_bounds(other) {
+            let top_left_x = partial_max(self.x, other.x);
+            let top_left_y = partial_max(self.y, other.y); 
+            let bottom_right_x = partial_min(self.bottom_right_x(), other.bottom_right_x());
+            let bottom_right_y = partial_min(self.bottom_right_y(), other.bottom_right_y()); 
+            GeneralRectangle::<U> {
+                x : top_left_x,
+                y : top_left_y,
+                width : bottom_right_x - top_left_x,
+                height : bottom_right_y - top_left_y
+            }
+        } else {
+            None
+        }
+    }
+    fn inside_bounds(&self, other : &GeneralRectangle<U>) -> bool {
+        other.bottom_right_x() >= self.x && 
+        other.x <= self.x + self.width &&
+        other.y + other.height >= self.y &&
+        other.y <= self.y + self.height  
     }
     fn raise_error<T>(value: T) -> failure::Error
     where

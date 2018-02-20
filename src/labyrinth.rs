@@ -50,7 +50,7 @@ impl Labyrinth {
         }
     }
     pub fn box_to_pixel<T>(&self, (x_box, y_box): (u32, u32)) -> Result<basic_types::GeneralRectangle<T>, failure::Error> 
-      where T : Copy + Default + std::fmt::Debug, T : conv::ValueFrom<u32> {
+      where T : Copy + Default + std::fmt::Debug + std::ops::Add<Output = T> + PartialOrd, T : conv::ValueFrom<u32> {
         use basic_types::{GeneralRectangle, Rectangle};
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
             Err(basic_types::LabyrinthError::InternalError.into())
