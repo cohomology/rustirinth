@@ -7,7 +7,7 @@ use ndarray;
 use basic_types;
 use labyrinth;
 
-use basic_types::IsARectangle;
+use basic_types::{IsARectangle, IsARectangularArea, IsAColor}; 
 
 #[derive(Debug)]
 pub struct EventHandler;
@@ -75,9 +75,9 @@ impl EventHandler {
         labyrinth: &mut labyrinth::Labyrinth,
         cairo_context: &cairo::Context,
     ) -> Result<(), failure::Error> {
-        let extents = cairo_context.clip_extents();
-        let rectangle = basic_types::Rectangle::approx_from(&extents)?;
-        println!("{:?}", rectangle);
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = cairo_context.clip_extents();
+        let rectangle = basic_types::Rectangle::approx_from(&(top_left_x, top_left_y, bottom_right_x - top_left_x,
+                                                              bottom_right_y - top_left_y))?;
         self.draw_axes(rectangle, labyrinth, cairo_context);
         Ok(())
     }
@@ -92,18 +92,36 @@ impl EventHandler {
         cairo_context.save();
         cairo_context.set_source_rgb(color.red(), color.green(), color.blue());
 
-        for x_cnt in 0..(labyrinth.x_box_cnt + 1) {
-            let x_pos = labyrinth.x + labyrinth.box_size * x_cnt;
-            cairo_context.move_to(f64::from(x_pos), f64::from(labyrinth.y));
-            cairo_context.line_to(f64::from(x_pos), f64::from(labyrinth.y + labyrinth.height));
-        }
-        for y_cnt in 0..(labyrinth.y_box_cnt + 1) {
-            let y_pos = labyrinth.y + labyrinth.box_size * y_cnt;
-            cairo_context.move_to(f64::from(labyrinth.x), f64::from(y_pos));
-            cairo_context.line_to(f64::from(labyrinth.x + labyrinth.width), f64::from(y_pos));
+        if self.is_inside_bounds(rectangle, labyrinth) {
+            self.draw_axes_x(rectangle, labyrinth, cairo_context);
+            // self.draw_axes_y(rectangle, labyrinth, cairo_context);
+
+            // for y_cnt in 0..(labyrinth.y_box_cnt + 1) {
+            //     let y_pos = labyrinth.y + labyrinth.box_size * y_cnt;
+            //     cairo_context.move_to(f64::from(labyrinth.x), f64::from(y_pos));
+            //     cairo_context.line_to(f64::from(labyrinth.x + labyrinth.width), f64::from(y_pos));
+            // }
         }
         cairo_context.stroke();
         cairo_context.restore();
+    }
+    fn is_inside_bounds(&self, rectangle: basic_types::Rectangle, labyrinth: &labyrinth::Labyrinth) -> bool {
+        rectangle.bottom_right_x() >= labyrinth.x && 
+        rectangle.top_left_x() <= labyrinth.x + labyrinth.width &&
+        rectangle.bottom_right_y() >= labyrinth.y &&
+        rectangle.top_left_y() <= labyrinth.y + labyrinth.height 
+    } 
+    fn draw_axes_x(&self, rectangle: basic_types::Rectangle, labyrinth: &labyrinth::Labyrinth, cairo_context: &cairo::Context) {   
+        use std::cmp::{min,max};
+        let start_x_cnt = if rectangle.top_left_x() > labyrinth.x { ( rectangle.top_left_x() - labyrinth.x + labyrinth.box_size - 1 ) / labyrinth.box_size } else { 0 };
+        let end_x_cnt = min(labyrinth.x_box_cnt + 1, ( rectangle.bottom_right_x() - labyrinth.x + labyrinth.box_size - 1 ) / labyrinth.box_size);
+
+        for x_cnt in start_x_cnt..end_x_cnt {
+            let x_pos = labyrinth.x + labyrinth.box_size * x_cnt;
+            cairo_context.move_to(f64::from(x_pos), f64::from(max(labyrinth.y, rectangle.top_left_y())));
+            cairo_context.line_to(f64::from(x_pos), f64::from(min(labyrinth.y + labyrinth.height, rectangle.bottom_right_y())));
+        } 
+        println!("{} -> {}", start_x_cnt, end_x_cnt); 
     }
     // fn draw_marked_boxes(
     //     &mut self,

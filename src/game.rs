@@ -101,7 +101,7 @@ impl LabyrinthGame {
                 let rectangle = basic_types::Rectangle::from(rect)
                     .unwrap_or_else( |e| { 
                         LabyrinthGame::fatal_error(&e);
-                        basic_types::Rectangle::new()});
+                        basic_types::Rectangle::default()});
                 let mut borrowed_state = state.borrow_mut();
                 event_handler
                     .borrow_mut()
