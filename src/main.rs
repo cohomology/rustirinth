@@ -1,6 +1,7 @@
 extern crate cairo;
 #[macro_use]
 extern crate clap;
+extern crate conv;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
@@ -9,7 +10,6 @@ extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 extern crate ndarray;
-extern crate conv;
 
 mod main_window;
 mod game;

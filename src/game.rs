@@ -24,7 +24,7 @@ impl LabyrinthGame {
         gtk::main();
         Ok(())
     }
-    pub fn fatal_error(error : &failure::Error) {
+    pub fn fatal_error(error: &failure::Error) {
         use std::io::Write;
         let stderr = &mut ::std::io::stderr();
         let _ = writeln!(stderr, "Error: {}", error);
@@ -32,9 +32,9 @@ impl LabyrinthGame {
         while let Some(cause) = fail.cause() {
             let _ = writeln!(stderr, "Caused by: {}", cause);
             fail = cause;
-        }    
+        }
         std::process::exit(-1);
-    } 
+    }
     fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
             Some(screen) => Ok(LabyrinthGame::initialize_window(box_size, &screen)),
@@ -84,11 +84,10 @@ impl LabyrinthGame {
             .drawing_area
             .connect_button_press_event(move |drawing_area, event| {
                 let mut borrowed_state = state.borrow_mut();
-                event_handler.borrow_mut().on_button_press(
-                    drawing_area,
-                    &mut *borrowed_state,
-                    event,
-                );
+                event_handler
+                    .borrow_mut()
+                    .on_button_press(drawing_area, &mut *borrowed_state, event)
+                    .unwrap_or_else(|e| LabyrinthGame::fatal_error(&e));
                 gtk::Inhibit(true)
             });
         self
@@ -97,19 +96,17 @@ impl LabyrinthGame {
         let state = self.state.clone();
         let event_handler = self.event_handler.clone();
         self.main_window
-                .drawing_area
-                .connect_size_allocate(move |_, rect| { 
-                    let rectangle = basic_types::Rectangle::from(rect); 
-                    match rectangle {
-                        Ok(rectangle) => {
-                            let mut borrowed_state = state.borrow_mut();
-                            event_handler
-                                .borrow_mut()
-                                .on_size_allocate(&mut *borrowed_state, &rectangle)
-                        }, 
-                        Err(e) => LabyrinthGame::fatal_error(&e)
-                    }
-                });
+            .drawing_area
+            .connect_size_allocate(move |_, rect| {
+                let rectangle = basic_types::Rectangle::from(rect)
+                    .unwrap_or_else( |e| { 
+                        LabyrinthGame::fatal_error(&e);
+                        basic_types::Rectangle::new()});
+                let mut borrowed_state = state.borrow_mut();
+                event_handler
+                    .borrow_mut()
+                    .on_size_allocate(&mut *borrowed_state, &rectangle);
+            });
         self
     }
     fn connect_on_draw_event(self) -> Self {
@@ -119,9 +116,10 @@ impl LabyrinthGame {
             .drawing_area
             .connect_draw(move |_, cairo_context| {
                 let mut borrowed_state = state.borrow_mut();
-                event_handler.borrow_mut()
-                             .on_draw(&mut *borrowed_state, cairo_context)
-                             .unwrap_or_else(|e| LabyrinthGame::fatal_error(&e));
+                event_handler
+                    .borrow_mut()
+                    .on_draw(&mut *borrowed_state, cairo_context)
+                    .unwrap_or_else(|e| LabyrinthGame::fatal_error(&e));
                 gtk::Inhibit(true)
             });
         self
@@ -133,11 +131,10 @@ impl LabyrinthGame {
             .drawing_area
             .connect_motion_notify_event(move |drawing_area, event| {
                 let mut borrowed_state = state.borrow_mut();
-                event_handler.borrow_mut().on_motion_notify(
-                    drawing_area,
-                    &mut *borrowed_state,
-                    event,
-                );
+                event_handler
+                    .borrow_mut()
+                    .on_motion_notify(drawing_area, &mut *borrowed_state, event)
+                    .unwrap_or_else(|e| LabyrinthGame::fatal_error(&e));
                 gtk::Inhibit(true)
             });
         self

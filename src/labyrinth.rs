@@ -1,6 +1,8 @@
 use std;
 use ndarray;
 use basic_types;
+use failure;
+use conv;
 
 #[derive(Debug)]
 pub struct Labyrinth {
@@ -47,16 +49,14 @@ impl Labyrinth {
             ))
         }
     }
-    pub fn box_to_pixel(&self, (x_box, y_box): (u32, u32)) -> Option<basic_types::Rectangle> {
+    pub fn box_to_pixel<T>(&self, (x_box, y_box): (u32, u32)) -> Result<basic_types::GeneralRectangle<T>, failure::Error> 
+      where T : Copy + Default + std::fmt::Debug, T : conv::ValueFrom<u32> {
+        use basic_types::{GeneralRectangle, Rectangle};
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
-            None
+            Err(basic_types::LabyrinthError::InternalError.into())
         } else {
-            Some(basic_types::Rectangle {
-                x: self.x + self.box_size * x_box,
-                y: self.y + self.box_size * y_box,
-                width: self.box_size,
-                height: self.box_size,
-            })
+            GeneralRectangle::<T>::from::<u32, Rectangle>(&Rectangle { x: self.x + self.box_size * x_box, 
+                y: self.y + self.box_size * y_box, width: self.box_size, height: self.box_size })
         }
     }
 }
