@@ -29,7 +29,11 @@ impl EventHandler {
             state.height = 0;
         }
     }
-    pub fn on_draw(&mut self, state: &mut labyrinth::LabyrinthState, cairo_context: &cairo::Context) -> Result<(), failure::Error> {
+    pub fn on_draw(
+        &mut self,
+        state: &mut labyrinth::LabyrinthState,
+        cairo_context: &cairo::Context,
+    ) -> Result<(), failure::Error> {
         if let Some(labyrinth) = state.labyrinth.as_mut() {
             self.draw(labyrinth, cairo_context)
         } else {

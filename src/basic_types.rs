@@ -240,7 +240,8 @@ where
         }
     }
     fn inside_bounds(&self, other: &GeneralRectangle<U>) -> bool {
-        other.bottom_right_x() >= self.x && other.x <= self.x + self.width && other.y + other.height >= self.y && other.y <= self.y + self.height
+        other.bottom_right_x() >= self.x && other.x <= self.x + self.width && other.y + other.height >= self.y
+            && other.y <= self.y + self.height
     }
     fn raise_error<T>(value: T) -> failure::Error
     where
