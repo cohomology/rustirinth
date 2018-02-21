@@ -51,7 +51,10 @@ impl Labyrinth {
     pub fn pixel_rectangle_to_box_slice_index<T>(
         &self,
         rectangle: &basic_types::Rectangle,
-    ) -> Result<((T, T), (T, T)), failure::Error> where T : conv::ValueFrom<u32> {
+    ) -> Result<((T, T), (T, T)), failure::Error>
+    where
+        T: conv::ValueFrom<u32>,
+    {
         let ((top_left_x, top_left_y), (bottom_right_x, bottom_right_y)) = self.coerce_rectangle_into_labyrinth(rectangle);
         let box_top_left = self.pixel_to_box((top_left_x, top_left_y));
         let box_bottom_right = self.pixel_to_box((bottom_right_x, bottom_right_y));
@@ -82,27 +85,30 @@ impl Labyrinth {
             coordinate
         }
     }
-    fn check_valid_tuple<T, S>(value : Option<(T,T)>) -> Result<(S, S), failure::Error> 
-        where S : conv::ValueFrom<T>, T : std::fmt::Debug + Copy {
+    fn check_valid_tuple<T, S>(value: Option<(T, T)>) -> Result<(S, S), failure::Error>
+    where
+        S: conv::ValueFrom<T>,
+        T: std::fmt::Debug + Copy,
+    {
         match value {
-            Some(value) => { 
+            Some(value) => {
                 let x = conv::ValueInto::value_into(value.0).map_err(|_| Labyrinth::conversion_error(value))?;
-                let y = conv::ValueInto::value_into(value.1).map_err(|_| Labyrinth::conversion_error(value))?; 
-                Ok((x,y))
+                let y = conv::ValueInto::value_into(value.1).map_err(|_| Labyrinth::conversion_error(value))?;
+                Ok((x, y))
             }
-            _ => Err(basic_types::LabyrinthError::InternalError.into())  
+            _ => Err(basic_types::LabyrinthError::InternalError.into()),
         }
     }
     pub fn box_to_pixel<T, S>(&self, (x_box, y_box): (S, S)) -> Result<basic_types::GeneralRectangle<T>, failure::Error>
     where
         T: Copy + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
         T: conv::ValueFrom<u32>,
-        u32 : conv::ValueFrom<S>,
-        S : Copy + Default + std::fmt::Debug + std::ops::Add<Output = S> + std::ops::Sub<Output = S> + PartialOrd, 
+        u32: conv::ValueFrom<S>,
+        S: Copy + Default + std::fmt::Debug + std::ops::Add<Output = S> + std::ops::Sub<Output = S> + PartialOrd,
     {
         use basic_types::{GeneralRectangle, Rectangle};
-        let x_box : u32 = conv::ValueInto::value_into(x_box).map_err(|_| Labyrinth::conversion_error(x_box))?; 
-        let y_box : u32 = conv::ValueInto::value_into(y_box).map_err(|_| Labyrinth::conversion_error(y_box))?;
+        let x_box: u32 = conv::ValueInto::value_into(x_box).map_err(|_| Labyrinth::conversion_error(x_box))?;
+        let y_box: u32 = conv::ValueInto::value_into(y_box).map_err(|_| Labyrinth::conversion_error(y_box))?;
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
             Err(basic_types::LabyrinthError::InternalError.into())
         } else {
@@ -122,7 +128,7 @@ impl Labyrinth {
         basic_types::LabyrinthError::ConversionError {
             value: format!("{:?}", value),
         }.into()
-    } 
+    }
 }
 
 #[derive(Debug)]

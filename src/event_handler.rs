@@ -188,21 +188,26 @@ impl EventHandler {
         let blue = basic_types::Color::get_blue();
         let white = basic_types::Color::get_white();
         cairo_context.save();
-        let ((box_top_left_x, box_top_left_y), (box_bottom_right_x, box_bottom_right_y)) = 
+        let ((box_top_left_x, box_top_left_y), (box_bottom_right_x, box_bottom_right_y)) =
             labyrinth.pixel_rectangle_to_box_slice_index::<usize>(drawing_area)?;
-        println!("Draw boxes: {:?}", ((box_top_left_x, box_top_left_y), (box_bottom_right_x, box_bottom_right_y)));
-        let slice_arg = s![box_top_left_x..(box_bottom_right_x + 1), box_top_left_y..(box_bottom_right_y+1)];
-        println!("{:?}", slice_arg);
+        let x_slice_end = if box_bottom_right_x + 1 >= labyrinth.x_box_cnt as usize {
+            labyrinth.x_box_cnt as usize
+        } else {
+            box_bottom_right_x + 1
+        };
+        let y_slice_end = if box_bottom_right_y + 1 >= labyrinth.y_box_cnt as usize {
+            labyrinth.y_box_cnt as usize
+        } else {
+            box_bottom_right_y + 1
+        };
+        let slice_arg = s![box_top_left_x..x_slice_end, box_top_left_y..y_slice_end];
         for ((x_box, y_box), marked) in labyrinth.marked.slice(slice_arg).indexed_iter() {
-            println!("Iterating: {:?}, {}", (x_box, y_box), *marked);
-            let box_rectangle = labyrinth.box_to_pixel((x_box, y_box))?;
+            let box_rectangle = labyrinth.box_to_pixel((x_box + box_top_left_x, y_box + box_top_left_y))?;
             if let Some(intersection) = box_rectangle.intersect(drawing_area) {
                 if *marked {
-                    cairo_context.set_source_rgb(blue.red(), blue.green(), blue.blue()); 
-                    println!("{:?}", (x_box, y_box));
+                    cairo_context.set_source_rgb(blue.red(), blue.green(), blue.blue());
                 } else {
-                    cairo_context.set_source_rgb(white.red(), white.green(), white.blue());  
-                    println!("{:?}", (x_box, y_box)); 
+                    cairo_context.set_source_rgb(white.red(), white.green(), white.blue());
                 }
                 let float_rectangle: basic_types::GeneralRectangle<f64> = intersection.to()?;
                 cairo_context.rectangle(
@@ -222,25 +227,23 @@ impl EventHandler {
         drawing_area: &gtk::DrawingArea,
         labyrinth: &mut labyrinth::Labyrinth,
         (x, y): (f64, f64),
-        allow_unmark : bool,
+        allow_unmark: bool,
     ) -> Result<(), failure::Error> {
         use gtk::WidgetExt;
         let clicked_box = labyrinth.pixel_to_box((x as u32, y as u32));
         if let Some(clicked_box) = clicked_box {
             if self.update_marked(labyrinth, clicked_box, allow_unmark) {
                 let rectangle = labyrinth.box_to_pixel::<i32, u32>(clicked_box)?;
-                println!("Redraw: {:?}", rectangle); 
                 drawing_area.queue_draw_area(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
             }
         }
         Ok(())
     }
-    fn update_marked(&mut self, labyrinth: &mut labyrinth::Labyrinth, (x, y): (u32, u32), allow_unmark : bool) -> bool {
+    fn update_marked(&mut self, labyrinth: &mut labyrinth::Labyrinth, (x, y): (u32, u32), allow_unmark: bool) -> bool {
         if let Some(marked) = labyrinth
             .marked
             .get_mut(ndarray::Ix2(x as usize, y as usize))
         {
-            println!("Button clicked!");
             if !*marked {
                 *marked = true;
                 return true;
