@@ -7,8 +7,6 @@ use ndarray;
 use basic_types;
 use labyrinth;
 
-use basic_types::{IsARectangle, IsARectangularArea, IsAColor}; 
-
 #[derive(Debug)]
 pub struct EventHandler;
 
@@ -76,91 +74,95 @@ impl EventHandler {
         cairo_context: &cairo::Context,
     ) -> Result<(), failure::Error> {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = cairo_context.clip_extents();
-        let rectangle = basic_types::Rectangle::approx_from(&(top_left_x, top_left_y, bottom_right_x - top_left_x,
+        let draw_area = basic_types::Rectangle::approx_from(&(top_left_x, top_left_y, bottom_right_x - top_left_x,
                                                               bottom_right_y - top_left_y))?;
-        self.draw_axes(rectangle, labyrinth, cairo_context);
+        if let Some(intersection) = draw_area.intersect(&labyrinth.rectangle) { 
+            self.draw_axes(&intersection, labyrinth, cairo_context)?;
+            self.draw_boxes(&intersection, labyrinth, cairo_context)?;
+        }
         Ok(())
     }
     fn draw_axes(
         &self,
-        rectangle: basic_types::Rectangle,
+        draw_area: &basic_types::Rectangle,
         labyrinth: &labyrinth::Labyrinth,
         cairo_context: &cairo::Context,
-    ) {
+    ) -> Result<(), failure::Error> {
         use basic_types::IsAColor;
         let color = basic_types::Color::get_black();
         cairo_context.save();
         cairo_context.set_source_rgb(color.red(), color.green(), color.blue());
 
-        if self.is_inside_bounds(rectangle, labyrinth) {
-            self.draw_axes_x(rectangle, labyrinth, cairo_context);
-            // self.draw_axes_y(rectangle, labyrinth, cairo_context);
+        self.draw_axes_x(draw_area, labyrinth, cairo_context)?;
+        self.draw_axes_y(draw_area, labyrinth, cairo_context)?;
 
-            // for y_cnt in 0..(labyrinth.y_box_cnt + 1) {
-            //     let y_pos = labyrinth.y + labyrinth.box_size * y_cnt;
-            //     cairo_context.move_to(f64::from(labyrinth.x), f64::from(y_pos));
-            //     cairo_context.line_to(f64::from(labyrinth.x + labyrinth.width), f64::from(y_pos));
-            // }
-        }
         cairo_context.stroke();
         cairo_context.restore();
+        Ok(())
     }
-    fn is_inside_bounds(&self, rectangle: basic_types::Rectangle, labyrinth: &labyrinth::Labyrinth) -> bool {
-        rectangle.bottom_right_x() >= labyrinth.x && 
-        rectangle.top_left_x() <= labyrinth.x + labyrinth.width &&
-        rectangle.bottom_right_y() >= labyrinth.y &&
-        rectangle.top_left_y() <= labyrinth.y + labyrinth.height 
-    } 
-    fn draw_axes_x(&self, rectangle: basic_types::Rectangle, labyrinth: &labyrinth::Labyrinth, cairo_context: &cairo::Context) {   
+    fn draw_axes_x(&self, draw_area: &basic_types::Rectangle, labyrinth: &labyrinth::Labyrinth, cairo_context: &cairo::Context) -> Result<(), failure::Error> {   
         use std::cmp::{min,max};
-        let start_x_cnt = if rectangle.top_left_x() > labyrinth.x { ( rectangle.top_left_x() - labyrinth.x + labyrinth.box_size - 1 ) / labyrinth.box_size } else { 0 };
-        let end_x_cnt = min(labyrinth.x_box_cnt + 1, ( rectangle.bottom_right_x() - labyrinth.x + labyrinth.box_size - 1 ) / labyrinth.box_size);
+        use basic_types::IsARectangularArea;
+
+        let start_x_cnt = ( draw_area.top_left_x() - labyrinth.rectangle.x + labyrinth.box_size - 1 ) / labyrinth.box_size;
+        let end_x_cnt = min(labyrinth.x_box_cnt + 1, ( draw_area.bottom_right_x() - labyrinth.rectangle.x + labyrinth.box_size - 1 ) / labyrinth.box_size); 
 
         for x_cnt in start_x_cnt..end_x_cnt {
-            let x_pos = labyrinth.x + labyrinth.box_size * x_cnt;
-            cairo_context.move_to(f64::from(x_pos), f64::from(max(labyrinth.y, rectangle.top_left_y())));
-            cairo_context.line_to(f64::from(x_pos), f64::from(min(labyrinth.y + labyrinth.height, rectangle.bottom_right_y())));
+            let start_x = labyrinth.rectangle.x + labyrinth.box_size * x_cnt; 
+            let start_y = max(labyrinth.rectangle.y, draw_area.top_left_y());
+            self.draw_line(basic_types::Rectangle { x : start_x, y : start_y, width : 0, height : labyrinth.rectangle.height }, draw_area, cairo_context)?;
         } 
-        println!("{} -> {}", start_x_cnt, end_x_cnt); 
+        Ok(())
     }
-    // fn draw_marked_boxes(
-    //     &mut self,
-    //     labyrinth: &mut labyrinth::Labyrinth,
-    //     cairo_context: &cairo::Context,
-    // ) -> Result<(), failure::Error> {
-    //     cairo_context.save();
-    //     for (index, _) in labyrinth.marked.indexed_iter().filter(|&(_, &elem)| elem) {
-    //         let (x_box, y_box) = (index[0] as u32, index[1] as u32);
-    //         if let Some(rectangle) = labyrinth.box_to_pixel((x_box, y_box)) {
-    //             let float_rectangle: basic_types::GeneralRectangle<f64> = rectangle.to()?;
-    //             cairo_context.rectangle(
-    //                 float_rectangle.x(),
-    //                 float_rectangle.y(),
-    //                 float_rectangle.width(),
-    //                 float_rectangle.height(),
-    //             );
-    //             cairo_context.fill();
-    //         }
-    //     }
-    //     cairo_context.restore();
-    //     Ok(())
-    // }
-    // fn repaint_box(&self, cairo_context: &cairo::Context) -> Result<(), failure::Error> {
-    //     let color = self.to_be_painted.color;
-    //     let rectangle = self.to_be_painted.rectangle;
-    //     let float_rectangle: basic_types::GeneralRectangle<f64> = rectangle.to()?;
-    //     cairo_context.save();
-    //     cairo_context.set_source_rgb(color.0, color.1, color.2);
-    //     cairo_context.rectangle(
-    //         float_rectangle.x(),
-    //         float_rectangle.y(),
-    //         float_rectangle.width(),
-    //         float_rectangle.height(),
-    //     );
-    //     cairo_context.fill();
-    //     cairo_context.restore();
-    //     Ok(())
-    // }
+    fn draw_axes_y(&self, draw_area: &basic_types::Rectangle, labyrinth: &labyrinth::Labyrinth, cairo_context: &cairo::Context) -> Result<(), failure::Error> {   
+        use std::cmp::{min,max};
+        use basic_types::IsARectangularArea;
+
+        let start_y_cnt = ( draw_area.top_left_y() - labyrinth.rectangle.y + labyrinth.box_size - 1 ) / labyrinth.box_size;
+        let end_y_cnt = min(labyrinth.y_box_cnt + 1, ( draw_area.bottom_right_y() - labyrinth.rectangle.y + labyrinth.box_size - 1 ) / labyrinth.box_size); 
+
+        for y_cnt in start_y_cnt..end_y_cnt {
+            let start_x = max(labyrinth.rectangle.x, draw_area.top_left_x());
+            let start_y = labyrinth.rectangle.y + labyrinth.box_size * y_cnt; 
+            self.draw_line(basic_types::Rectangle { x : start_x, y : start_y, width : labyrinth.rectangle.width, height : 0 }, draw_area, cairo_context)?;
+        } 
+        Ok(())
+    } 
+    fn draw_line(&self, line : basic_types::Rectangle, draw_area : &basic_types::Rectangle, cairo_context: &cairo::Context) -> Result<(), failure::Error> {   
+        use basic_types::IsARectangularArea;
+        match draw_area.intersect(&line).map(|x| x.approx_to::<f64, basic_types::GeneralRectangle<f64>>()) { 
+            Some(Ok(intersection)) => {
+                cairo_context.move_to(intersection.top_left_x(), intersection.top_left_y());
+                cairo_context.line_to(intersection.bottom_right_x(), intersection.bottom_right_y()); 
+                Ok(())
+            }
+            Some(Err(err)) => Err(err),
+            None => Ok(())
+        }  
+    }
+    fn draw_boxes(
+        &mut self,
+        drawing_area : &basic_types::Rectangle,
+        labyrinth: &mut labyrinth::Labyrinth,
+        cairo_context: &cairo::Context,
+    ) -> Result<(), failure::Error> {
+        use basic_types::{IsAColor, IsARectangle};
+        let color = basic_types::Color::get_blue();
+        cairo_context.save();
+        cairo_context.set_source_rgb(color.red(), color.green(), color.blue()); 
+        for (index, _) in labyrinth.marked.indexed_iter().filter(|&(_, &elem)| elem) {
+            let (x_box, y_box) = (index[0] as u32, index[1] as u32);
+            let box_rectangle = labyrinth.box_to_pixel((x_box, y_box))?;
+            if let Some(intersection) = box_rectangle.intersect(drawing_area) {
+                let float_rectangle: basic_types::GeneralRectangle<f64> = intersection.to()?;
+                cairo_context.rectangle(float_rectangle.x(), float_rectangle.y(), 
+                                        float_rectangle.width(), float_rectangle.height());
+                cairo_context.fill();
+            }
+        }
+        cairo_context.restore();
+        Ok(())
+    }
     fn handle_mark_box(
         &mut self,
         drawing_area: &gtk::DrawingArea,

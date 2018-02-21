@@ -147,9 +147,26 @@ where
     }
 }
 
+fn partial_max<U : PartialOrd>(a : U, b : U) -> U {
+    if b > a {
+        b
+    } else {
+        a 
+    }
+}
+
+fn partial_min<U : PartialOrd>(a : U, b : U) -> U {
+    if b < a {
+        b
+    } else {
+        a 
+    }
+} 
+
 impl<U> GeneralRectangle<U>
 where
-    U: Copy + Clone + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = U>  
+    U: Copy + Clone + Default + PartialOrd + std::fmt::Debug 
+            + std::ops::Add<Output = U> + std::ops::Sub<Output = U>
 {
     pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, failure::Error>
     where
@@ -207,19 +224,18 @@ where
         let height = Rectangle::approx_convert(self.height)?;
         Ok(R::from_tuple((x, y, width, height)))
     }
-    fn intersect(&self, other : &GeneralRectangle<U>) -> Option<GeneralRectangle<U>> {
-        use std::cmp::{partial_max,partial_mix};
+    pub fn intersect(&self, other : &GeneralRectangle<U>) -> Option<GeneralRectangle<U>> {
         if self.inside_bounds(other) {
             let top_left_x = partial_max(self.x, other.x);
             let top_left_y = partial_max(self.y, other.y); 
             let bottom_right_x = partial_min(self.bottom_right_x(), other.bottom_right_x());
             let bottom_right_y = partial_min(self.bottom_right_y(), other.bottom_right_y()); 
-            GeneralRectangle::<U> {
+            Some(GeneralRectangle::<U> {
                 x : top_left_x,
                 y : top_left_y,
                 width : bottom_right_x - top_left_x,
                 height : bottom_right_y - top_left_y
-            }
+            })
         } else {
             None
         }
@@ -284,6 +300,7 @@ where
 
     fn get_white() -> Self;
     fn get_black() -> Self;
+    fn get_blue() -> Self;
 }
 
 pub struct GeneralColor<T>
@@ -324,6 +341,10 @@ where
     fn get_white() -> GeneralColor<T> {
         GeneralColor::<T>::from_tuple((255.into(), 255.into(), 255.into()))
     }
+
+    fn get_blue() -> GeneralColor<T> {
+        GeneralColor::<T>::from_tuple((0.into(), 0.into(), 255.into()))
+    }  
 }
 
 pub type Color = GeneralColor<f64>;
