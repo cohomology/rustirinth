@@ -9,7 +9,7 @@ pub struct Labyrinth {
     pub rectangle: basic_types::Rectangle,
     pub x_box_cnt: u32,
     pub y_box_cnt: u32,
-    pub marked: ndarray::ArrayD<bool>,
+    pub marked: ndarray::Array2<bool>,
     pub box_size: u32,
 }
 
@@ -31,7 +31,7 @@ impl Labyrinth {
             },
             x_box_cnt: x_box_cnt,
             y_box_cnt: y_box_cnt,
-            marked: ndarray::ArrayD::<bool>::default(ndarray::IxDyn(&[x_box_cnt as usize, y_box_cnt as usize])),
+            marked: ndarray::Array2::<bool>::default(ndarray::Ix2(x_box_cnt as usize, y_box_cnt as usize)),
             box_size: box_size,
         }
     }
@@ -41,21 +41,72 @@ impl Labyrinth {
         {
             None
         } else {
+            // with border => this is for user input
             Some((
                 ((x - self.rectangle.x) / self.box_size),
                 ((y - self.rectangle.y) / self.box_size),
             ))
         }
     }
-    pub fn box_to_pixel<T>(&self, (x_box, y_box): (u32, u32)) -> Result<basic_types::GeneralRectangle<T>, failure::Error>
+    pub fn pixel_rectangle_to_box_slice_index<T>(
+        &self,
+        rectangle: &basic_types::Rectangle,
+    ) -> Result<((T, T), (T, T)), failure::Error> where T : conv::ValueFrom<u32> {
+        let ((top_left_x, top_left_y), (bottom_right_x, bottom_right_y)) = self.coerce_rectangle_into_labyrinth(rectangle);
+        let box_top_left = self.pixel_to_box((top_left_x, top_left_y));
+        let box_bottom_right = self.pixel_to_box((bottom_right_x, bottom_right_y));
+        // failure::Failure can't be used with Option's ok_or() right now!
+        let box_top_left = Labyrinth::check_valid_tuple(box_top_left)?;
+        let box_bottom_right = Labyrinth::check_valid_tuple(box_bottom_right)?;
+        Ok((box_top_left, box_bottom_right))
+    }
+    fn coerce_rectangle_into_labyrinth(&self, rectangle: &basic_types::Rectangle) -> ((u32, u32), (u32, u32)) {
+        use basic_types::IsARectangularArea;
+        (
+            self.coerce_point_into_labyrinth((rectangle.top_left_x(), rectangle.top_left_y())),
+            self.coerce_point_into_labyrinth((rectangle.bottom_right_x(), rectangle.bottom_right_y())),
+        )
+    }
+    fn coerce_point_into_labyrinth(&self, (x, y): (u32, u32)) -> (u32, u32) {
+        (
+            Labyrinth::coerce_coordinate_into_labyrinth(x, self.rectangle.x, self.rectangle.width),
+            Labyrinth::coerce_coordinate_into_labyrinth(y, self.rectangle.y, self.rectangle.height),
+        )
+    }
+    fn coerce_coordinate_into_labyrinth(coordinate: u32, start: u32, dimension: u32) -> u32 {
+        if coordinate <= start {
+            start + 1
+        } else if coordinate >= start + dimension {
+            start + dimension - 1
+        } else {
+            coordinate
+        }
+    }
+    fn check_valid_tuple<T, S>(value : Option<(T,T)>) -> Result<(S, S), failure::Error> 
+        where S : conv::ValueFrom<T>, T : std::fmt::Debug + Copy {
+        match value {
+            Some(value) => { 
+                let x = conv::ValueInto::value_into(value.0).map_err(|_| Labyrinth::conversion_error(value))?;
+                let y = conv::ValueInto::value_into(value.1).map_err(|_| Labyrinth::conversion_error(value))?; 
+                Ok((x,y))
+            }
+            _ => Err(basic_types::LabyrinthError::InternalError.into())  
+        }
+    }
+    pub fn box_to_pixel<T, S>(&self, (x_box, y_box): (S, S)) -> Result<basic_types::GeneralRectangle<T>, failure::Error>
     where
         T: Copy + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
         T: conv::ValueFrom<u32>,
+        u32 : conv::ValueFrom<S>,
+        S : Copy + Default + std::fmt::Debug + std::ops::Add<Output = S> + std::ops::Sub<Output = S> + PartialOrd, 
     {
         use basic_types::{GeneralRectangle, Rectangle};
+        let x_box : u32 = conv::ValueInto::value_into(x_box).map_err(|_| Labyrinth::conversion_error(x_box))?; 
+        let y_box : u32 = conv::ValueInto::value_into(y_box).map_err(|_| Labyrinth::conversion_error(y_box))?;
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
             Err(basic_types::LabyrinthError::InternalError.into())
         } else {
+            // without border for this function; this is just for drawing
             GeneralRectangle::<T>::from::<u32, Rectangle>(&Rectangle {
                 x: self.rectangle.x + self.box_size * x_box + 1,
                 y: self.rectangle.y + self.box_size * y_box + 1,
@@ -64,6 +115,14 @@ impl Labyrinth {
             })
         }
     }
+    pub fn conversion_error<T>(value: T) -> failure::Error
+    where
+        T: std::fmt::Debug,
+    {
+        basic_types::LabyrinthError::ConversionError {
+            value: format!("{:?}", value),
+        }.into()
+    } 
 }
 
 #[derive(Debug)]
