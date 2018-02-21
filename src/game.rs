@@ -103,7 +103,8 @@ impl LabyrinthGame {
                 let mut borrowed_state = state.borrow_mut();
                 event_handler
                     .borrow_mut()
-                    .on_size_allocate(&mut *borrowed_state, &rectangle);
+                    .on_size_allocate(&mut *borrowed_state, &rectangle)
+                    .unwrap_or_else(|e| LabyrinthGame::fatal_error(&e));
             });
         self
     }

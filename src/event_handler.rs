@@ -7,6 +7,9 @@ use ndarray;
 use basic_types;
 use labyrinth;
 
+const LEFT_MOUSE_BUTTON: u32 = 1;
+const RIGHT_MOUSE_BUTTON: u32 = 3;
+
 #[derive(Debug)]
 pub struct EventHandler;
 
@@ -14,10 +17,14 @@ impl EventHandler {
     pub fn new() -> EventHandler {
         EventHandler {}
     }
-    pub fn on_size_allocate(&mut self, state: &mut labyrinth::LabyrinthState, rect: &basic_types::Rectangle) {
+    pub fn on_size_allocate(
+        &mut self,
+        state: &mut labyrinth::LabyrinthState,
+        rect: &basic_types::Rectangle,
+    ) -> Result<(), failure::Error> {
         if rect.width > 0 && rect.height > 0 {
-            state.width = rect.width as u32;
-            state.height = rect.height as u32;
+            state.width = basic_types::convert(rect.width)?;
+            state.height = basic_types::convert(rect.height)?;
             state.labyrinth = Some(labyrinth::Labyrinth::new(
                 state.box_size,
                 state.width,
@@ -28,6 +35,7 @@ impl EventHandler {
             state.width = 0;
             state.height = 0;
         }
+        Ok(())
     }
     pub fn on_draw(
         &mut self,
@@ -47,7 +55,15 @@ impl EventHandler {
         event: &gdk::EventButton,
     ) -> Result<(), failure::Error> {
         if let Some(ref mut labyrinth) = state.labyrinth {
-            self.handle_mark_box(drawing_area, labyrinth, event.get_position(), true)?;
+            match event.get_button() {
+                LEFT_MOUSE_BUTTON => {
+                    self.handle_mark_box(drawing_area, labyrinth, event.get_position(), false)?;
+                }
+                RIGHT_MOUSE_BUTTON => {
+                    self.handle_mark_box(drawing_area, labyrinth, event.get_position(), true)?;
+                }
+                _ => (),
+            }
         }
         Ok(())
     }
@@ -60,6 +76,8 @@ impl EventHandler {
         if let Some(ref mut labyrinth) = state.labyrinth {
             if event.get_state() & gdk::ModifierType::BUTTON1_MASK != gdk::ModifierType::empty() {
                 self.handle_mark_box(drawing_area, labyrinth, event.get_position(), false)?;
+            } else if event.get_state() & gdk::ModifierType::BUTTON3_MASK != gdk::ModifierType::empty() {
+                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), true)?;
             }
         }
         Ok(())
@@ -75,6 +93,7 @@ impl EventHandler {
         if let Some(intersection) = draw_area.intersect(&labyrinth.rectangle) {
             self.draw_axes(&intersection, labyrinth, cairo_context)?;
             self.draw_boxes(&intersection, labyrinth, cairo_context)?;
+            // self.draw_legend(&intersection, labyrinth, cairo_context)?;
         }
         Ok(())
     }
@@ -227,27 +246,27 @@ impl EventHandler {
         drawing_area: &gtk::DrawingArea,
         labyrinth: &mut labyrinth::Labyrinth,
         (x, y): (f64, f64),
-        allow_unmark: bool,
+        unmark: bool,
     ) -> Result<(), failure::Error> {
         use gtk::WidgetExt;
         let clicked_box = labyrinth.pixel_to_box((x as u32, y as u32));
         if let Some(clicked_box) = clicked_box {
-            if self.update_marked(labyrinth, clicked_box, allow_unmark) {
+            if self.update_marked(labyrinth, clicked_box, unmark) {
                 let rectangle = labyrinth.box_to_pixel::<i32, u32>(clicked_box)?;
                 drawing_area.queue_draw_area(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
             }
         }
         Ok(())
     }
-    fn update_marked(&mut self, labyrinth: &mut labyrinth::Labyrinth, (x, y): (u32, u32), allow_unmark: bool) -> bool {
+    fn update_marked(&mut self, labyrinth: &mut labyrinth::Labyrinth, (x, y): (u32, u32), unmark: bool) -> bool {
         if let Some(marked) = labyrinth
             .marked
             .get_mut(ndarray::Ix2(x as usize, y as usize))
         {
-            if !*marked {
+            if !unmark && !*marked {
                 *marked = true;
                 return true;
-            } else if allow_unmark {
+            } else if unmark && *marked {
                 *marked = false;
                 return true;
             }

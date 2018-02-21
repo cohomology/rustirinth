@@ -163,6 +163,31 @@ fn partial_min<U: PartialOrd>(a: U, b: U) -> U {
     }
 }
 
+fn raise_error<T>(value: T) -> failure::Error
+where
+    T: std::fmt::Debug,
+{
+    LabyrinthError::ConversionError {
+        value: format!("{:?}", value),
+    }.into()
+}
+
+pub fn convert<T, S>(value: T) -> Result<S, failure::Error>
+where
+    S: conv::ValueFrom<T> + Copy + std::fmt::Debug,
+    T: std::fmt::Debug + std::marker::Copy,
+{
+    conv::ValueInto::value_into(value).map_err(|_| raise_error(value))
+}
+
+pub fn approx_convert<T, S>(value: T) -> Result<S, failure::Error>
+where
+    S: conv::ApproxFrom<T> + Copy + std::fmt::Debug,
+    T: std::fmt::Debug + std::marker::Copy,
+{
+    conv::ApproxInto::approx_into(value).map_err(|_| raise_error(value))
+}
+
 impl<U> GeneralRectangle<U>
 where
     U: Copy + Clone + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = U> + std::ops::Sub<Output = U>,
@@ -173,10 +198,10 @@ where
         U: conv::ValueFrom<T>,
         T: Copy + std::fmt::Debug,
     {
-        let x = GeneralRectangle::<U>::convert(rectangle.x())?;
-        let y = GeneralRectangle::<U>::convert(rectangle.y())?;
-        let width = GeneralRectangle::<U>::convert(rectangle.width())?;
-        let height = GeneralRectangle::<U>::convert(rectangle.height())?;
+        let x = convert(rectangle.x())?;
+        let y = convert(rectangle.y())?;
+        let width = convert(rectangle.width())?;
+        let height = convert(rectangle.height())?;
         Ok(GeneralRectangle::<U> {
             x,
             y,
@@ -190,10 +215,10 @@ where
         U: conv::ApproxFrom<T>,
         T: Copy + std::fmt::Debug,
     {
-        let x = GeneralRectangle::<U>::approx_convert(rectangle.x())?;
-        let y = GeneralRectangle::<U>::approx_convert(rectangle.y())?;
-        let width = GeneralRectangle::<U>::approx_convert(rectangle.width())?;
-        let height = GeneralRectangle::<U>::approx_convert(rectangle.height())?;
+        let x = approx_convert(rectangle.x())?;
+        let y = approx_convert(rectangle.y())?;
+        let width = approx_convert(rectangle.width())?;
+        let height = approx_convert(rectangle.height())?;
         Ok(GeneralRectangle::<U> {
             x,
             y,
@@ -206,10 +231,10 @@ where
         R: IsARectangle<T>,
         T: conv::ValueFrom<U> + Copy + std::fmt::Debug,
     {
-        let x = Rectangle::convert(self.x)?;
-        let y = Rectangle::convert(self.y)?;
-        let width = Rectangle::convert(self.width)?;
-        let height = Rectangle::convert(self.height)?;
+        let x = convert(self.x)?;
+        let y = convert(self.y)?;
+        let width = convert(self.width)?;
+        let height = convert(self.height)?;
         Ok(R::from_tuple((x, y, width, height)))
     }
     pub fn approx_to<T, R>(&self) -> Result<R, failure::Error>
@@ -217,10 +242,10 @@ where
         R: IsARectangle<T>,
         T: conv::ApproxFrom<U> + Copy + std::fmt::Debug,
     {
-        let x = Rectangle::approx_convert(self.x)?;
-        let y = Rectangle::approx_convert(self.y)?;
-        let width = Rectangle::approx_convert(self.width)?;
-        let height = Rectangle::approx_convert(self.height)?;
+        let x = approx_convert(self.x)?;
+        let y = approx_convert(self.y)?;
+        let width = approx_convert(self.width)?;
+        let height = approx_convert(self.height)?;
         Ok(R::from_tuple((x, y, width, height)))
     }
     pub fn intersect(&self, other: &GeneralRectangle<U>) -> Option<GeneralRectangle<U>> {
@@ -242,28 +267,6 @@ where
     fn inside_bounds(&self, other: &GeneralRectangle<U>) -> bool {
         other.bottom_right_x() >= self.x && other.x <= self.x + self.width && other.y + other.height >= self.y
             && other.y <= self.y + self.height
-    }
-    fn raise_error<T>(value: T) -> failure::Error
-    where
-        T: std::fmt::Debug,
-    {
-        LabyrinthError::ConversionError {
-            value: format!("{:?}", value),
-        }.into()
-    }
-    fn convert<T, S>(value: T) -> Result<S, failure::Error>
-    where
-        S: conv::ValueFrom<T> + Copy + std::fmt::Debug,
-        T: std::fmt::Debug + std::marker::Copy,
-    {
-        conv::ValueInto::value_into(value).map_err(|_| GeneralRectangle::<U>::raise_error(value))
-    }
-    fn approx_convert<T, S>(value: T) -> Result<S, failure::Error>
-    where
-        S: conv::ApproxFrom<T> + Copy + std::fmt::Debug,
-        T: std::fmt::Debug + std::marker::Copy,
-    {
-        conv::ApproxInto::approx_into(value).map_err(|_| GeneralRectangle::<U>::raise_error(value))
     }
 }
 
