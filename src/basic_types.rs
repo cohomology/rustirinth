@@ -12,7 +12,7 @@ pub enum LabyrinthError {
     #[fail(display = "Conversion error or overflow while converting \"{}\"", value)]
     ConversionError { value: String },
     #[fail(display = "An internal error occurred")]
-    InternalError, 
+    InternalError,
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
@@ -123,7 +123,7 @@ pub type Rectangle = GeneralRectangle<u32>;
 
 impl<T> IsARectangle<T> for GeneralRectangle<T>
 where
-    T: Copy + Clone + Default + std::fmt::Debug
+    T: Copy + Clone + Default + std::fmt::Debug,
 {
     fn from_tuple((x, y, width, height): (T, T, T, T)) -> GeneralRectangle<T> {
         GeneralRectangle::<T> {
@@ -147,26 +147,25 @@ where
     }
 }
 
-fn partial_max<U : PartialOrd>(a : U, b : U) -> U {
+fn partial_max<U: PartialOrd>(a: U, b: U) -> U {
     if b > a {
         b
     } else {
-        a 
+        a
     }
 }
 
-fn partial_min<U : PartialOrd>(a : U, b : U) -> U {
+fn partial_min<U: PartialOrd>(a: U, b: U) -> U {
     if b < a {
         b
     } else {
-        a 
+        a
     }
-} 
+}
 
 impl<U> GeneralRectangle<U>
 where
-    U: Copy + Clone + Default + PartialOrd + std::fmt::Debug 
-            + std::ops::Add<Output = U> + std::ops::Sub<Output = U>
+    U: Copy + Clone + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = U> + std::ops::Sub<Output = U>,
 {
     pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, failure::Error>
     where
@@ -224,27 +223,24 @@ where
         let height = Rectangle::approx_convert(self.height)?;
         Ok(R::from_tuple((x, y, width, height)))
     }
-    pub fn intersect(&self, other : &GeneralRectangle<U>) -> Option<GeneralRectangle<U>> {
+    pub fn intersect(&self, other: &GeneralRectangle<U>) -> Option<GeneralRectangle<U>> {
         if self.inside_bounds(other) {
             let top_left_x = partial_max(self.x, other.x);
-            let top_left_y = partial_max(self.y, other.y); 
+            let top_left_y = partial_max(self.y, other.y);
             let bottom_right_x = partial_min(self.bottom_right_x(), other.bottom_right_x());
-            let bottom_right_y = partial_min(self.bottom_right_y(), other.bottom_right_y()); 
+            let bottom_right_y = partial_min(self.bottom_right_y(), other.bottom_right_y());
             Some(GeneralRectangle::<U> {
-                x : top_left_x,
-                y : top_left_y,
-                width : bottom_right_x - top_left_x,
-                height : bottom_right_y - top_left_y
+                x: top_left_x,
+                y: top_left_y,
+                width: bottom_right_x - top_left_x,
+                height: bottom_right_y - top_left_y,
             })
         } else {
             None
         }
     }
-    fn inside_bounds(&self, other : &GeneralRectangle<U>) -> bool {
-        other.bottom_right_x() >= self.x && 
-        other.x <= self.x + self.width &&
-        other.y + other.height >= self.y &&
-        other.y <= self.y + self.height  
+    fn inside_bounds(&self, other: &GeneralRectangle<U>) -> bool {
+        other.bottom_right_x() >= self.x && other.x <= self.x + self.width && other.y + other.height >= self.y && other.y <= self.y + self.height
     }
     fn raise_error<T>(value: T) -> failure::Error
     where
@@ -278,11 +274,23 @@ pub trait IsARectangularArea<T> {
 }
 
 impl<T, R> IsARectangularArea<T> for R
-where T: std::ops::Add, R: IsARectangle<T>, T: std::ops::Add<Output = T> {
-    fn top_left_x(&self) -> T { self.x() }
-    fn top_left_y(&self) -> T { self.y() }
-    fn bottom_right_x(&self) -> T { self.x() + self.width() }
-    fn bottom_right_y(&self) -> T { self.y() + self.height() }
+where
+    T: std::ops::Add,
+    R: IsARectangle<T>,
+    T: std::ops::Add<Output = T>,
+{
+    fn top_left_x(&self) -> T {
+        self.x()
+    }
+    fn top_left_y(&self) -> T {
+        self.y()
+    }
+    fn bottom_right_x(&self) -> T {
+        self.x() + self.width()
+    }
+    fn bottom_right_y(&self) -> T {
+        self.y() + self.height()
+    }
 }
 
 pub trait IsAColor<T>
@@ -344,7 +352,7 @@ where
 
     fn get_blue() -> GeneralColor<T> {
         GeneralColor::<T>::from_tuple((0.into(), 0.into(), 255.into()))
-    }  
+    }
 }
 
 pub type Color = GeneralColor<f64>;
@@ -460,8 +468,7 @@ mod tests {
 
     #[test]
     fn to_float() {
-        let rectangle =
-            Rectangle::from::<u32, (u32, u32, u32, u32)>(&(1, 4294967295, 3, 4)).unwrap();
+        let rectangle = Rectangle::from::<u32, (u32, u32, u32, u32)>(&(1, 4294967295, 3, 4)).unwrap();
         let float_tuple = rectangle.approx_to::<f64, (f64, f64, f64, f64)>().unwrap();
         assert_eq!(float_tuple, ((1.0, 4294967295.0, 3.0, 4.0)));
     }

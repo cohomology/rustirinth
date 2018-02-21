@@ -46,9 +46,7 @@ impl LabyrinthGame {
         let requested_size = main_window.requested_size;
         LabyrinthGame {
             main_window: main_window,
-            event_handler: std::rc::Rc::new(std::cell::RefCell::new(
-                event_handler::EventHandler::new(),
-            )),
+            event_handler: std::rc::Rc::new(std::cell::RefCell::new(event_handler::EventHandler::new())),
             state: std::rc::Rc::new(std::cell::RefCell::new(labyrinth::LabyrinthState::new(
                 box_size,
                 requested_size,
@@ -98,10 +96,10 @@ impl LabyrinthGame {
         self.main_window
             .drawing_area
             .connect_size_allocate(move |_, rect| {
-                let rectangle = basic_types::Rectangle::from(rect)
-                    .unwrap_or_else( |e| { 
-                        LabyrinthGame::fatal_error(&e);
-                        basic_types::Rectangle::default()});
+                let rectangle = basic_types::Rectangle::from(rect).unwrap_or_else(|e| {
+                    LabyrinthGame::fatal_error(&e);
+                    basic_types::Rectangle::default()
+                });
                 let mut borrowed_state = state.borrow_mut();
                 event_handler
                     .borrow_mut()
