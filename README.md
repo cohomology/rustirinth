@@ -6,4 +6,4 @@ Goal: The user draws a labyrinth on a cairo surface and afterwards sets start an
 
 At the moment, only the labyrinth can be drawn.
 
-As [gtk-rs](https://github.com/gtk-rs/gtk) uses all different type of number types (i32, f64, u32) by chance (often a function draw_region takes f64, a similar function draw_area takes i32 and so on), this game became very picky of all the different conversions going on.
+As [gtk-rs](https://github.com/gtk-rs/gtk) uses all different type of number types (i32, f64, u32) by chance (often a function `draw_region` takes `f64`, a similar function `draw_area` takes i32 and so on), this game became very picky of all the different conversions going on.
