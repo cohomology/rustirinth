@@ -37,14 +37,14 @@ impl LabyrinthGame {
     }
     fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, failure::Error> {
         match gdk::Screen::get_default() {
-            Some(screen) => Ok(LabyrinthGame::initialize_window(box_size, &screen)),
+            Some(screen) => LabyrinthGame::initialize_window(box_size, &screen),
             None => Err(basic_types::LabyrinthError::CouldNotGetDefaultScreen.into()),
         }
     }
-    fn initialize_window(box_size: u32, screen: &gdk::Screen) -> LabyrinthGame {
-        let main_window = main_window::LabyrinthMainWindow::new(screen);
+    fn initialize_window(box_size: u32, screen: &gdk::Screen) -> Result<LabyrinthGame, failure::Error> {
+        let main_window = main_window::LabyrinthMainWindow::new(screen)?;
         let requested_size = main_window.requested_size;
-        LabyrinthGame {
+        Ok(LabyrinthGame {
             main_window: main_window,
             event_handler: std::rc::Rc::new(std::cell::RefCell::new(event_handler::EventHandler::new())),
             state: std::rc::Rc::new(std::cell::RefCell::new(labyrinth::LabyrinthState::new(
@@ -57,7 +57,7 @@ impl LabyrinthGame {
             .connect_motion_notify_event()
             .connect_on_size_allocate_event()
             .connect_on_draw_event()
-            .show_all()
+            .show_all())
     }
     fn connect_delete_event(self) -> Self {
         self.main_window.window.connect_delete_event(|_, _| {

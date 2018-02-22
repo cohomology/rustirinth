@@ -1,6 +1,9 @@
 use std;
 use gtk;
 use gdk;
+use failure;
+
+use basic_types;
 
 #[derive(Debug)]
 pub struct LabyrinthMainWindow {
@@ -10,7 +13,7 @@ pub struct LabyrinthMainWindow {
 }
 
 impl LabyrinthMainWindow {
-    pub fn new(screen: &gdk::Screen) -> LabyrinthMainWindow {
+    pub fn new(screen: &gdk::Screen) -> Result<LabyrinthMainWindow, failure::Error> {
         use gtk::prelude::*;
         use gdk::ScreenExt;
         lazy_static! {
@@ -28,13 +31,12 @@ impl LabyrinthMainWindow {
         drawing_area.set_can_default(true);
         drawing_area.grab_default();
         drawing_area.add_events(*EVENT_MASK);
-        LabyrinthMainWindow {
+        let requested_width = basic_types::convert(monitor_workarea.width)?; 
+        let requested_height = basic_types::convert(monitor_workarea.height)?;  
+        Ok(LabyrinthMainWindow {
             window: window,
             drawing_area: std::rc::Rc::new(drawing_area),
-            requested_size: (
-                monitor_workarea.width as u32,
-                monitor_workarea.height as u32,
-            ),
-        }
+            requested_size: ( requested_width, requested_height ),
+        })
     }
 }
