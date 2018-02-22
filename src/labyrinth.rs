@@ -1,15 +1,17 @@
-use std;
-use ndarray;
-use basic_types;
-use failure;
-use conv;
+use std::option::Option;
+use std::fmt::Debug;
+use std::ops::{Add, Sub};
+use ndarray::{Array2 as Array, Ix2 as Dim};
+use basic_types::{convert, GeneralRectangle, IsARectangularArea, LabyrinthError, Rectangle, TwoDimensionalRange};
+use failure::Error;
+use conv::ValueFrom;
 
 #[derive(Debug)]
 pub struct Labyrinth {
-    pub rectangle: basic_types::Rectangle,
+    pub rectangle: Rectangle,
     pub x_box_cnt: u32,
     pub y_box_cnt: u32,
-    pub marked: ndarray::Array2<bool>,
+    pub marked: Array<bool>,
     pub box_size: u32,
 }
 
@@ -23,7 +25,7 @@ impl Labyrinth {
         let x_box_cnt = width / box_size;
         let y_box_cnt = height / box_size;
         Labyrinth {
-            rectangle: basic_types::Rectangle {
+            rectangle: Rectangle {
                 x: total_width / 2 - width / 2,
                 y: total_height / 2 - height / 2,
                 width: width + 1,
@@ -31,7 +33,7 @@ impl Labyrinth {
             },
             x_box_cnt: x_box_cnt,
             y_box_cnt: y_box_cnt,
-            marked: ndarray::Array2::<bool>::default(ndarray::Ix2(x_box_cnt as usize, y_box_cnt as usize)),
+            marked: Array::<bool>::default(Dim(x_box_cnt as usize, y_box_cnt as usize)),
             box_size: box_size,
         }
     }
@@ -48,23 +50,28 @@ impl Labyrinth {
             ))
         }
     }
-    pub fn pixel_rectangle_to_box_slice_index<T>(
-        &self,
-        rectangle: &basic_types::Rectangle,
-    ) -> Result<((T, T), (T, T)), failure::Error>
-    where
-        T: conv::ValueFrom<u32> + Copy + std::fmt::Debug,
-    {
+    pub fn pixel_rectangle_to_box_range(&self, rectangle: &Rectangle) -> Result<TwoDimensionalRange, Error> {
         let ((top_left_x, top_left_y), (bottom_right_x, bottom_right_y)) = self.coerce_rectangle_into_labyrinth(rectangle);
-        let box_top_left = self.pixel_to_box((top_left_x, top_left_y));
-        let box_bottom_right = self.pixel_to_box((bottom_right_x, bottom_right_y));
-        // failure::Failure can't be used with Option's ok_or() right now!
-        let box_top_left = Labyrinth::check_valid_tuple(box_top_left)?;
-        let box_bottom_right = Labyrinth::check_valid_tuple(box_bottom_right)?;
-        Ok((box_top_left, box_bottom_right))
+        let (box_top_left_x, box_top_left_y) =
+            Labyrinth::check_valid_tuple::<u32, usize>(self.pixel_to_box((top_left_x, top_left_y)))?;
+        let (mut box_bottom_right_x, mut box_bottom_right_y) =
+            Labyrinth::check_valid_tuple::<u32, usize>(self.pixel_to_box((bottom_right_x, bottom_right_y)))?;
+        box_bottom_right_x = if box_bottom_right_x + 1 >= self.x_box_cnt as usize {
+            self.x_box_cnt as usize
+        } else {
+            box_bottom_right_x + 1
+        };
+        box_bottom_right_y = if box_bottom_right_y + 1 >= self.y_box_cnt as usize {
+            self.y_box_cnt as usize
+        } else {
+            box_bottom_right_y + 1
+        };
+        Ok((
+            (box_top_left_x..box_bottom_right_x),
+            (box_top_left_y..box_bottom_right_y),
+        ))
     }
-    fn coerce_rectangle_into_labyrinth(&self, rectangle: &basic_types::Rectangle) -> ((u32, u32), (u32, u32)) {
-        use basic_types::IsARectangularArea;
+    fn coerce_rectangle_into_labyrinth(&self, rectangle: &Rectangle) -> ((u32, u32), (u32, u32)) {
         (
             self.coerce_point_into_labyrinth((rectangle.top_left_x(), rectangle.top_left_y())),
             self.coerce_point_into_labyrinth((rectangle.bottom_right_x(), rectangle.bottom_right_y())),
@@ -85,32 +92,31 @@ impl Labyrinth {
             coordinate
         }
     }
-    fn check_valid_tuple<T, S>(value: Option<(T, T)>) -> Result<(S, S), failure::Error>
+    fn check_valid_tuple<T, S>(value: Option<(T, T)>) -> Result<(S, S), Error>
     where
-        S: conv::ValueFrom<T> + Copy + std::fmt::Debug,
-        T: std::fmt::Debug + Copy,
+        S: Copy + Debug + ValueFrom<T>,
+        T: Copy + Debug,
     {
         match value {
             Some((x, y)) => {
-                let x = basic_types::convert(x)?;
-                let y = basic_types::convert(y)?;
+                let x = convert(x)?;
+                let y = convert(y)?;
                 Ok((x, y))
             }
-            _ => Err(basic_types::LabyrinthError::InternalError.into()),
+            _ => Err(LabyrinthError::InternalError.into()),
         }
     }
-    pub fn box_to_pixel<T, S>(&self, (x_box, y_box): (S, S)) -> Result<basic_types::GeneralRectangle<T>, failure::Error>
+    pub fn box_to_pixel<T, S>(&self, (x_box, y_box): (S, S)) -> Result<GeneralRectangle<T>, Error>
     where
-        T: Copy + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
-        T: conv::ValueFrom<u32>,
-        u32: conv::ValueFrom<S>,
-        S: Copy + Default + std::fmt::Debug + std::ops::Add<Output = S> + std::ops::Sub<Output = S> + PartialOrd,
+        T: Copy + Default + PartialOrd + Debug + Add<Output = T> + Sub<Output = T>,
+        T: ValueFrom<u32>,
+        u32: ValueFrom<S>,
+        S: Copy + Default + PartialOrd + Debug + Add<Output = S> + Sub<Output = S>,
     {
-        use basic_types::{GeneralRectangle, Rectangle};
-        let x_box: u32 = basic_types::convert(x_box)?;
-        let y_box: u32 = basic_types::convert(y_box)?;
+        let x_box: u32 = convert(x_box)?;
+        let y_box: u32 = convert(y_box)?;
         if x_box >= self.x_box_cnt || y_box >= self.y_box_cnt {
-            Err(basic_types::LabyrinthError::InternalError.into())
+            Err(LabyrinthError::InternalError.into())
         } else {
             // without border for this function; this is just for drawing
             GeneralRectangle::<T>::from::<u32, Rectangle>(&Rectangle {
@@ -125,17 +131,13 @@ impl Labyrinth {
 
 #[derive(Debug)]
 pub struct LabyrinthState {
-    pub width: u32,
-    pub height: u32,
     pub box_size: u32,
-    pub labyrinth: std::option::Option<Labyrinth>,
+    pub labyrinth: Option<Labyrinth>,
 }
 
 impl LabyrinthState {
-    pub fn new(box_size: u32, (width, height): (u32, u32)) -> LabyrinthState {
+    pub fn new(box_size: u32) -> LabyrinthState {
         LabyrinthState {
-            width: width,
-            height: height,
             box_size: box_size,
             labyrinth: None,
         }

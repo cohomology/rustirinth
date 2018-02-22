@@ -1,9 +1,12 @@
 #![allow(dead_code)]
-use std;
 use gtk;
 use cairo;
-use failure;
-use conv;
+
+use std::fmt::Debug;
+use std::marker::Copy;
+use std::ops::{Add, Range, Sub};
+use failure::Error;
+use conv::{ApproxFrom, ApproxInto, ValueFrom, ValueInto};
 
 #[derive(Debug, Fail)]
 pub enum LabyrinthError {
@@ -111,7 +114,7 @@ where
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, PartialOrd)]
 pub struct GeneralRectangle<T>
 where
-    T: Copy + Clone + Default + std::fmt::Debug,
+    T: Copy + Clone + Default + Debug,
 {
     pub x: T,
     pub y: T,
@@ -123,7 +126,7 @@ pub type Rectangle = GeneralRectangle<u32>;
 
 impl<T> IsARectangle<T> for GeneralRectangle<T>
 where
-    T: Copy + Clone + Default + std::fmt::Debug,
+    T: Copy + Clone + Default + Debug,
 {
     fn from_tuple((x, y, width, height): (T, T, T, T)) -> GeneralRectangle<T> {
         GeneralRectangle::<T> {
@@ -163,40 +166,40 @@ fn partial_min<U: PartialOrd>(a: U, b: U) -> U {
     }
 }
 
-fn raise_error<T>(value: T) -> failure::Error
+fn raise_error<T>(value: T) -> Error
 where
-    T: std::fmt::Debug,
+    T: Debug,
 {
     LabyrinthError::ConversionError {
         value: format!("{:?}", value),
     }.into()
 }
 
-pub fn convert<T, S>(value: T) -> Result<S, failure::Error>
+pub fn convert<T, S>(value: T) -> Result<S, Error>
 where
-    S: conv::ValueFrom<T> + Copy + std::fmt::Debug,
-    T: std::fmt::Debug + std::marker::Copy,
+    S: ValueFrom<T> + Copy + Debug,
+    T: Debug + Copy,
 {
-    conv::ValueInto::value_into(value).map_err(|_| raise_error(value))
+    ValueInto::value_into(value).map_err(|_| raise_error(value))
 }
 
-pub fn approx_convert<T, S>(value: T) -> Result<S, failure::Error>
+pub fn approx_convert<T, S>(value: T) -> Result<S, Error>
 where
-    S: conv::ApproxFrom<T> + Copy + std::fmt::Debug,
-    T: std::fmt::Debug + std::marker::Copy,
+    S: ApproxFrom<T> + Copy + Debug,
+    T: Debug + Copy,
 {
-    conv::ApproxInto::approx_into(value).map_err(|_| raise_error(value))
+    ApproxInto::approx_into(value).map_err(|_| raise_error(value))
 }
 
 impl<U> GeneralRectangle<U>
 where
-    U: Copy + Clone + Default + PartialOrd + std::fmt::Debug + std::ops::Add<Output = U> + std::ops::Sub<Output = U>,
+    U: Copy + Clone + Default + PartialOrd + Debug + Add<Output = U> + Sub<Output = U>,
 {
-    pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, failure::Error>
+    pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, Error>
     where
         R: IsARectangle<T>,
-        U: conv::ValueFrom<T>,
-        T: Copy + std::fmt::Debug,
+        U: ValueFrom<T>,
+        T: Copy + Debug,
     {
         let x = convert(rectangle.x())?;
         let y = convert(rectangle.y())?;
@@ -209,11 +212,11 @@ where
             height,
         })
     }
-    pub fn approx_from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, failure::Error>
+    pub fn approx_from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, Error>
     where
         R: IsARectangle<T>,
-        U: conv::ApproxFrom<T>,
-        T: Copy + std::fmt::Debug,
+        U: ApproxFrom<T>,
+        T: Copy + Debug,
     {
         let x = approx_convert(rectangle.x())?;
         let y = approx_convert(rectangle.y())?;
@@ -226,10 +229,10 @@ where
             height,
         })
     }
-    pub fn to<T, R>(&self) -> Result<R, failure::Error>
+    pub fn to<T, R>(&self) -> Result<R, Error>
     where
         R: IsARectangle<T>,
-        T: conv::ValueFrom<U> + Copy + std::fmt::Debug,
+        T: ValueFrom<U> + Copy + Debug,
     {
         let x = convert(self.x)?;
         let y = convert(self.y)?;
@@ -237,10 +240,10 @@ where
         let height = convert(self.height)?;
         Ok(R::from_tuple((x, y, width, height)))
     }
-    pub fn approx_to<T, R>(&self) -> Result<R, failure::Error>
+    pub fn approx_to<T, R>(&self) -> Result<R, Error>
     where
         R: IsARectangle<T>,
-        T: conv::ApproxFrom<U> + Copy + std::fmt::Debug,
+        T: ApproxFrom<U> + Copy + Debug,
     {
         let x = approx_convert(self.x)?;
         let y = approx_convert(self.y)?;
@@ -279,9 +282,9 @@ pub trait IsARectangularArea<T> {
 
 impl<T, R> IsARectangularArea<T> for R
 where
-    T: std::ops::Add,
+    T: Add,
     R: IsARectangle<T>,
-    T: std::ops::Add<Output = T>,
+    T: Add<Output = T>,
 {
     fn top_left_x(&self) -> T {
         self.x()
@@ -296,6 +299,8 @@ where
         self.y() + self.height()
     }
 }
+
+pub type TwoDimensionalRange = (Range<usize>, Range<usize>);
 
 pub trait IsAColor<T>
 where

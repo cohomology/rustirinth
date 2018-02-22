@@ -1,56 +1,54 @@
 use std;
 use gtk;
 use gdk;
-use failure;
 
-use basic_types;
-use main_window;
-use event_handler;
-use labyrinth;
-
+use std::rc::Rc;
+use std::cell::RefCell;
 use gtk::WidgetExt;
+
+use event_handler::EventHandler;
+use labyrinth::LabyrinthState;
+use main_window::LabyrinthMainWindow;
+use failure::{Error, Fail};
+use basic_types::{LabyrinthError, Rectangle};
 
 #[derive(Debug)]
 pub struct LabyrinthGame {
-    main_window: main_window::LabyrinthMainWindow,
-    event_handler: std::rc::Rc<std::cell::RefCell<event_handler::EventHandler>>,
-    state: std::rc::Rc<std::cell::RefCell<labyrinth::LabyrinthState>>,
+    main_window: LabyrinthMainWindow,
+    event_handler: Rc<RefCell<EventHandler>>,
+    state: Rc<RefCell<LabyrinthState>>,
 }
 
 impl LabyrinthGame {
-    pub fn run(box_size: u32) -> Result<(), failure::Error> {
+    pub fn run(box_size: u32) -> Result<(), Error> {
         gtk::init()?;
         let _ = LabyrinthGame::initialize_screen(box_size)?;
         gtk::main();
         Ok(())
     }
-    pub fn fatal_error(error: &failure::Error) {
+    pub fn fatal_error(error: &Error) {
         use std::io::Write;
         let stderr = &mut ::std::io::stderr();
         let _ = writeln!(stderr, "Error: {}", error);
-        let mut fail: &failure::Fail = error.cause();
+        let mut fail: &Fail = error.cause();
         while let Some(cause) = fail.cause() {
             let _ = writeln!(stderr, "Caused by: {}", cause);
             fail = cause;
         }
         std::process::exit(-1);
     }
-    fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, failure::Error> {
+    fn initialize_screen(box_size: u32) -> Result<LabyrinthGame, Error> {
         match gdk::Screen::get_default() {
             Some(screen) => LabyrinthGame::initialize_window(box_size, &screen),
-            None => Err(basic_types::LabyrinthError::CouldNotGetDefaultScreen.into()),
+            None => Err(LabyrinthError::CouldNotGetDefaultScreen.into()),
         }
     }
-    fn initialize_window(box_size: u32, screen: &gdk::Screen) -> Result<LabyrinthGame, failure::Error> {
-        let main_window = main_window::LabyrinthMainWindow::new(screen)?;
-        let requested_size = main_window.requested_size;
+    fn initialize_window(box_size: u32, screen: &gdk::Screen) -> Result<LabyrinthGame, Error> {
+        let main_window = LabyrinthMainWindow::new(screen)?;
         Ok(LabyrinthGame {
             main_window: main_window,
-            event_handler: std::rc::Rc::new(std::cell::RefCell::new(event_handler::EventHandler::new())),
-            state: std::rc::Rc::new(std::cell::RefCell::new(labyrinth::LabyrinthState::new(
-                box_size,
-                requested_size,
-            ))),
+            event_handler: Rc::new(RefCell::new(EventHandler::new())),
+            state: Rc::new(RefCell::new(LabyrinthState::new(box_size))),
         }.connect_delete_event()
             .connect_key_press_event()
             .connect_button_press_event()
@@ -96,9 +94,9 @@ impl LabyrinthGame {
         self.main_window
             .drawing_area
             .connect_size_allocate(move |_, rect| {
-                let rectangle = basic_types::Rectangle::from(rect).unwrap_or_else(|e| {
+                let rectangle = Rectangle::from(rect).unwrap_or_else(|e| {
                     LabyrinthGame::fatal_error(&e);
-                    basic_types::Rectangle::default()
+                    Rectangle::default()
                 });
                 let mut borrowed_state = state.borrow_mut();
                 event_handler
