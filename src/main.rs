@@ -8,8 +8,6 @@ extern crate failure_derive;
 extern crate gdk;
 extern crate gtk;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate ndarray;
 
 mod main_window;
