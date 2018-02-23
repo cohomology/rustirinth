@@ -245,6 +245,7 @@ pub trait IsAColor<T>
     fn get_blue() -> Self;
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)] 
 pub struct GeneralColor<T>
     where f64: From<T>,
           T: From<u32> + Copy

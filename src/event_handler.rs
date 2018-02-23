@@ -6,7 +6,7 @@ use std::cmp::{max, min};
 use basic_types::{convert, Color, GeneralRectangle, IsAColor, IsARectangle, IsARectangularArea, Rectangle};
 use labyrinth::{Labyrinth, LabyrinthState};
 use failure::Error;
-use ndarray::{Ix2 as Dim, SliceInfo, SliceOrIndex};
+use ndarray::{Ix2 as Dim};
 use gtk::WidgetExt;
 
 #[derive(Debug)]
@@ -39,15 +39,16 @@ impl EventHandler {
         if let Some(ref mut labyrinth) = state.labyrinth {
             const LEFT_MOUSE_BUTTON: u32 = 1;
             const RIGHT_MOUSE_BUTTON: u32 = 3;
-            match event.get_button() {
+            let box_state = match event.get_button() {
                 LEFT_MOUSE_BUTTON => {
-                    self.handle_mark_box(drawing_area, labyrinth, event.get_position(), false)?;
+                    BoxState::Labyrinth
                 }
                 RIGHT_MOUSE_BUTTON => {
-                    self.handle_mark_box(drawing_area, labyrinth, event.get_position(), true)?;
+                    BoxState::Empty
                 }
                 _ => (),
-            }
+            };
+            self.handle_mark_box(drawing_area, labyrinth, event.get_position(), box_state)?; 
         }
         Ok(())
     }
@@ -58,9 +59,9 @@ impl EventHandler {
                             -> Result<(), Error> {
         if let Some(ref mut labyrinth) = state.labyrinth {
             if event.get_state() & gdk::ModifierType::BUTTON1_MASK != gdk::ModifierType::empty() {
-                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), false)?;
+                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), BoxState::Labyrinth)?;
             } else if event.get_state() & gdk::ModifierType::BUTTON3_MASK != gdk::ModifierType::empty() {
-                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), true)?;
+                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), BoxState::Empty)?;
             }
         }
         Ok(())
@@ -140,29 +141,18 @@ impl EventHandler {
                   labyrinth: &mut Labyrinth,
                   cairo_context: &cairo::Context)
                   -> Result<(), Error> {
-        let blue = Color::get_blue();
-        let white = Color::get_white();
         cairo_context.save();
-        let (x_range, y_range) = labyrinth.pixel_rectangle_to_box_range(drawing_area)?;
-        let slice_x = SliceOrIndex::from(x_range.clone());
-        let slice_y = SliceOrIndex::from(y_range.clone());
-        let slice_args = SliceInfo::<[SliceOrIndex; 2], Dim>::new([slice_x, slice_y])?;
-        for ((x_box, y_box), marked) in labyrinth.marked.slice(&slice_args).indexed_iter() {
-            let box_rectangle = labyrinth.box_to_pixel((x_box + x_range.start, y_box + y_range.start))?;
-            if let Some(intersection) = box_rectangle.intersect(drawing_area) {
-                if *marked {
-                    cairo_context.set_source_rgb(blue.red(), blue.green(), blue.blue());
-                } else {
-                    cairo_context.set_source_rgb(white.red(), white.green(), white.blue());
-                }
-                let float_rectangle: GeneralRectangle<f64> = intersection.to()?;
-                cairo_context.rectangle(float_rectangle.x(),
-                                        float_rectangle.y(),
-                                        float_rectangle.width(),
-                                        float_rectangle.height());
-                cairo_context.fill();
-            }
-        }
+        labyrinth.call_for_every_box(drawing_area, |intersection, entry| -> Result<(), Error> {
+            let float_rectangle: GeneralRectangle<f64> = intersection.to()?;
+            cairo_context.set_source_rgb(entry.color.red(), entry.color.green(), 
+                                         entry.color.blue()); 
+            cairo_context.rectangle(float_rectangle.x(),
+            float_rectangle.y(),
+            float_rectangle.width(),
+            float_rectangle.height());
+            cairo_context.fill(); 
+            Ok(())
+        });
         cairo_context.restore();
         Ok(())
     }
@@ -170,27 +160,13 @@ impl EventHandler {
                        drawing_area: &gtk::DrawingArea,
                        labyrinth: &mut Labyrinth,
                        (x, y): (f64, f64),
-                       unmark: bool)
+                       state : BoxState)
                        -> Result<(), Error> {
-        let clicked_box = labyrinth.pixel_to_box((x as u32, y as u32));
-        if let Some(clicked_box) = clicked_box {
-            if self.update_marked(labyrinth, clicked_box, unmark) {
-                let rectangle = labyrinth.box_to_pixel::<i32, u32>(clicked_box)?;
-                drawing_area.queue_draw_area(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-            }
-        }
+        labyrinth.set_box_state((x,y), state, |rectangle| -> Result<(), Error> {
+            let rectangle = self.box_to_pixel::<i32, u32>(rectangle)?;
+            drawing_area.queue_draw_area(rectangle.x, rectangle.y, rectangle.width, rectangle.height); 
+            Ok(())
+        })?;
         Ok(())
-    }
-    fn update_marked(&mut self, labyrinth: &mut Labyrinth, (x, y): (u32, u32), unmark: bool) -> bool {
-        if let Some(marked) = labyrinth.marked.get_mut(Dim(x as usize, y as usize)) {
-            if !unmark && !*marked {
-                *marked = true;
-                return true;
-            } else if unmark && *marked {
-                *marked = false;
-                return true;
-            }
-        }
-        false
     }
 }

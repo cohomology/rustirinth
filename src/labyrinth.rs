@@ -1,11 +1,12 @@
 use std::option::Option;
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
-use ndarray::{Array2 as Array, Ix2 as Dim};
+use ndarray::{Array2 as Array, SliceOrIndex, SliceInfo, Ix2 as Dim};
 use basic_types::{convert, GeneralRectangle, IsARectangularArea, LabyrinthError, Rectangle, TwoDimensionalRange, Color};
 use failure::Error;
 use conv::ValueFrom;
 
+#[derive(Debug,Copy,Clone)] 
 pub enum BoxState {
     Empty,
     Labyrinth,
@@ -13,10 +14,26 @@ pub enum BoxState {
     EndPoint
 }
 
-#[derive(Debug,Copy,Clone)]
+impl Default for BoxState {
+    fn default() -> BoxState {
+        BoxState::Empty
+    }
+}
+
+impl BoxState {
+    fn to_color() -> Color {
+        match BoxState {
+            BoxState::Empty => 
+
+        }
+    }
+
+};
+
+#[derive(Debug,Copy,Clone,Default)]
 pub struct LabyrinthEntry {
-    state : BoxState,
-    color : Color;
+    pub state : BoxState,
+    pub color : Color,
 }
 
 #[derive(Debug)]
@@ -45,6 +62,47 @@ impl Labyrinth {
                     y_box_cnt: y_box_cnt,
                     marked: Array::<bool>::default(Dim(x_box_cnt as usize, y_box_cnt as usize)),
                     box_size: box_size, }
+    }
+    pub fn set_box_state<F>(&self, pointer : (f64, f64), state : BoxState, call_success : F) -> Result<(), Error>
+        where F : FnOnce(&Rectangle) -> Result<(), Error> { 
+        let clicked_box = self.pixel_to_box((x as u32, y as u32));
+        if let Some(clicked_box) = clicked_box {
+            if self.update_marked(clicked_box, state) {
+                call_success(clicked_box)?;
+            }
+        } 
+        Ok(())
+    }
+    fn update_marked(&mut self, (x, y): (u32, u32), state : BoxState) -> bool {
+        if let Some(box) = labyrinth.marked.get_mut(Dim(x as usize, y as usize)) {
+            if box.state != state {
+                
+               return true;
+            }
+            
+            if !unmark && !*marked {
+                *marked = true;
+                return true;
+            } else if unmark && *marked {
+                *marked = false;
+                return true;
+            }
+        }
+        false
+    } 
+    pub fn call_for_every_box<F>(&self, area : &Rectangle, function : F) -> Result<(), Error>
+        where F : FnOnce(&Rectangle, &LabyrinthEntry) -> Result<(), Error> {
+        let (x_range, y_range) = self.pixel_rectangle_to_box_range(area)?;
+        let slice_x = SliceOrIndex::from(x_range.clone());
+        let slice_y = SliceOrIndex::from(y_range.clone());
+        let slice_args = SliceInfo::<[SliceOrIndex; 2], Dim>::new([slice_x, slice_y])?;
+        for ((x_box, y_box), entry) in self.marked.slice(&slice_args).indexed_iter() {
+            let box_rectangle = self.box_to_pixel((x_box + x_range.start, y_box + y_range.start))?;
+            if let Some(intersection) = box_rectangle.intersect(area) {
+                function(intersection, entry)?; 
+            }
+        }  
+        Ok(())
     }
     pub fn pixel_to_box(&self, (x, y): (u32, u32)) -> Option<(u32, u32)> {
         if x <= self.rectangle.x || x >= self.rectangle.x + self.rectangle.width || y <= self.rectangle.y
