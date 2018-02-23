@@ -17,7 +17,7 @@ impl Default for BoxState {
 }
 
 impl BoxState {
-    fn to_color(&self) -> Color {
+    pub fn color(&self) -> Color {
         match *self {
             BoxState::Empty => Color::get_white(),
             BoxState::Labyrinth => Color::get_blue(),
@@ -28,7 +28,6 @@ impl BoxState {
 #[derive(Debug, Copy, Clone, Default)]
 pub struct LabyrinthEntry {
     pub state: BoxState,
-    pub color: Color,
 }
 
 #[derive(Debug)]
@@ -55,7 +54,8 @@ impl Labyrinth {
                                            height: height + 1, },
                     x_box_cnt: x_box_cnt,
                     y_box_cnt: y_box_cnt,
-                    marked: Array::<LabyrinthEntry>::default(Dim(x_box_cnt as usize, y_box_cnt as usize)),
+                    marked: Array::<LabyrinthEntry>::from_elem(Dim(x_box_cnt as usize, y_box_cnt as usize),
+                                                               LabyrinthEntry { state: BoxState::Empty, }),
                     box_size: box_size, }
     }
     pub fn set_box_state<F>(&mut self, (x, y): (f64, f64), state: BoxState, call_success: F) -> Result<(), Error>
@@ -74,7 +74,6 @@ impl Labyrinth {
         if let Some(bx) = self.marked.get_mut(Dim(x as usize, y as usize)) {
             if bx.state != state {
                 bx.state = state;
-                bx.color = state.to_color();
                 return true;
             }
         }

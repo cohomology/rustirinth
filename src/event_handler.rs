@@ -151,7 +151,8 @@ impl EventHandler {
         cairo_context.save();
         labyrinth.call_for_every_box(drawing_area, |intersection, entry| -> Result<(), Error> {
             let float_rectangle: GeneralRectangle<f64> = intersection.to()?;
-            cairo_context.set_source_rgb(entry.color.red(), entry.color.green(), entry.color.blue());
+            let color = entry.state.color();
+            cairo_context.set_source_rgb(color.red(), color.green(), color.blue());
             cairo_context.rectangle(float_rectangle.x(),
                                     float_rectangle.y(),
                                     float_rectangle.width(),

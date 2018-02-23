@@ -246,7 +246,7 @@ pub trait IsAColor<T>
     fn get_red() -> Self;
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Default)]
 pub struct GeneralColor<T>
     where f64: From<T>,
           T: From<u32> + Copy
@@ -273,13 +273,6 @@ impl<T> IsAColor<T> for GeneralColor<T>
     fn get_blue() -> GeneralColor<T> { GeneralColor::<T>::from_tuple((0.into(), 0.into(), 255.into())) }
 
     fn get_red() -> GeneralColor<T> { GeneralColor::<T>::from_tuple((255.into(), 0.into(), 0.into())) }
-}
-
-impl<T> Default for GeneralColor<T>
-    where T: From<u32> + Copy,
-          f64: From<T>
-{
-    fn default() -> GeneralColor<T> { GeneralColor::<T>::get_white() }
 }
 
 pub type Color = GeneralColor<f64>;
