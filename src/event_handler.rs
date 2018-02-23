@@ -13,9 +13,7 @@ use gtk::WidgetExt;
 pub struct EventHandler;
 
 impl EventHandler {
-    pub fn new() -> EventHandler {
-        EventHandler {}
-    }
+    pub fn new() -> EventHandler { EventHandler {} }
     pub fn on_size_allocate(&mut self, state: &mut LabyrinthState, rect: &Rectangle) -> Result<(), Error> {
         if rect.width > 0 && rect.height > 0 {
             let width = convert(rect.width)?;

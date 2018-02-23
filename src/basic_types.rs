@@ -25,15 +25,11 @@ pub struct Point {
 }
 
 impl From<(u32, u32)> for Point {
-    fn from((x, y): (u32, u32)) -> Point {
-        Point { x, y }
-    }
+    fn from((x, y): (u32, u32)) -> Point { Point { x, y } }
 }
 
 impl From<Point> for (u32, u32) {
-    fn from(p: Point) -> (u32, u32) {
-        (p.x, p.y)
-    }
+    fn from(p: Point) -> (u32, u32) { (p.x, p.y) }
 }
 
 pub trait IsARectangle<T> {
@@ -51,18 +47,10 @@ impl IsARectangle<i32> for gtk::Rectangle {
                          width,
                          height, }
     }
-    fn x(&self) -> i32 {
-        self.x
-    }
-    fn y(&self) -> i32 {
-        self.y
-    }
-    fn width(&self) -> i32 {
-        self.width
-    }
-    fn height(&self) -> i32 {
-        self.height
-    }
+    fn x(&self) -> i32 { self.x }
+    fn y(&self) -> i32 { self.y }
+    fn width(&self) -> i32 { self.width }
+    fn height(&self) -> i32 { self.height }
 }
 
 impl IsARectangle<i32> for cairo::RectangleInt {
@@ -72,38 +60,20 @@ impl IsARectangle<i32> for cairo::RectangleInt {
                               width,
                               height, }
     }
-    fn x(&self) -> i32 {
-        self.x
-    }
-    fn y(&self) -> i32 {
-        self.y
-    }
-    fn width(&self) -> i32 {
-        self.width
-    }
-    fn height(&self) -> i32 {
-        self.height
-    }
+    fn x(&self) -> i32 { self.x }
+    fn y(&self) -> i32 { self.y }
+    fn width(&self) -> i32 { self.width }
+    fn height(&self) -> i32 { self.height }
 }
 
 impl<T> IsARectangle<T> for (T, T, T, T)
     where T: Copy
 {
-    fn from_tuple(tuple: (T, T, T, T)) -> (T, T, T, T) {
-        tuple
-    }
-    fn x(&self) -> T {
-        self.0
-    }
-    fn y(&self) -> T {
-        self.1
-    }
-    fn width(&self) -> T {
-        self.2
-    }
-    fn height(&self) -> T {
-        self.3
-    }
+    fn from_tuple(tuple: (T, T, T, T)) -> (T, T, T, T) { tuple }
+    fn x(&self) -> T { self.0 }
+    fn y(&self) -> T { self.1 }
+    fn width(&self) -> T { self.2 }
+    fn height(&self) -> T { self.3 }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, PartialOrd)]
@@ -127,18 +97,10 @@ impl<T> IsARectangle<T> for GeneralRectangle<T>
                                 width,
                                 height, }
     }
-    fn x(&self) -> T {
-        self.x
-    }
-    fn y(&self) -> T {
-        self.y
-    }
-    fn width(&self) -> T {
-        self.width
-    }
-    fn height(&self) -> T {
-        self.height
-    }
+    fn x(&self) -> T { self.x }
+    fn y(&self) -> T { self.y }
+    fn width(&self) -> T { self.width }
+    fn height(&self) -> T { self.height }
 }
 
 fn partial_max<U: PartialOrd>(a: U, b: U) -> U {
@@ -260,18 +222,10 @@ impl<T, R> IsARectangularArea<T> for R
           R: IsARectangle<T>,
           T: Add<Output = T>
 {
-    fn top_left_x(&self) -> T {
-        self.x()
-    }
-    fn top_left_y(&self) -> T {
-        self.y()
-    }
-    fn bottom_right_x(&self) -> T {
-        self.x() + self.width()
-    }
-    fn bottom_right_y(&self) -> T {
-        self.y() + self.height()
-    }
+    fn top_left_x(&self) -> T { self.x() }
+    fn top_left_y(&self) -> T { self.y() }
+    fn bottom_right_x(&self) -> T { self.x() + self.width() }
+    fn bottom_right_y(&self) -> T { self.y() + self.height() }
 }
 
 pub type TwoDimensionalRange = (Range<usize>, Range<usize>);
@@ -280,9 +234,7 @@ pub trait IsAColor<T>
     where T: Copy
 {
     fn from_tuple(tuple: (T, T, T)) -> Self;
-    fn to_tuple(&self) -> (T, T, T) {
-        (self.red(), self.green(), self.blue())
-    }
+    fn to_tuple(&self) -> (T, T, T) { (self.red(), self.green(), self.blue()) }
     fn to_float_tuple(&self) -> (f64, f64, f64);
     fn red(&self) -> T;
     fn green(&self) -> T;
@@ -306,33 +258,17 @@ impl<T> IsAColor<T> for GeneralColor<T>
     where f64: From<T>,
           T: From<u32> + Copy
 {
-    fn from_tuple((red, green, blue): (T, T, T)) -> GeneralColor<T> {
-        GeneralColor::<T> { red, green, blue }
-    }
-    fn to_float_tuple(&self) -> (f64, f64, f64) {
-        (self.red.into(), self.green.into(), self.blue.into())
-    }
-    fn red(&self) -> T {
-        self.red
-    }
-    fn blue(&self) -> T {
-        self.blue
-    }
-    fn green(&self) -> T {
-        self.green
-    }
+    fn from_tuple((red, green, blue): (T, T, T)) -> GeneralColor<T> { GeneralColor::<T> { red, green, blue } }
+    fn to_float_tuple(&self) -> (f64, f64, f64) { (self.red.into(), self.green.into(), self.blue.into()) }
+    fn red(&self) -> T { self.red }
+    fn blue(&self) -> T { self.blue }
+    fn green(&self) -> T { self.green }
 
-    fn get_black() -> GeneralColor<T> {
-        GeneralColor::<T>::from_tuple((0.into(), 0.into(), 0.into()))
-    }
+    fn get_black() -> GeneralColor<T> { GeneralColor::<T>::from_tuple((0.into(), 0.into(), 0.into())) }
 
-    fn get_white() -> GeneralColor<T> {
-        GeneralColor::<T>::from_tuple((255.into(), 255.into(), 255.into()))
-    }
+    fn get_white() -> GeneralColor<T> { GeneralColor::<T>::from_tuple((255.into(), 255.into(), 255.into())) }
 
-    fn get_blue() -> GeneralColor<T> {
-        GeneralColor::<T>::from_tuple((0.into(), 0.into(), 255.into()))
-    }
+    fn get_blue() -> GeneralColor<T> { GeneralColor::<T>::from_tuple((0.into(), 0.into(), 255.into())) }
 }
 
 pub type Color = GeneralColor<f64>;
