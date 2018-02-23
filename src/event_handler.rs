@@ -4,9 +4,8 @@ use gdk;
 
 use std::cmp::{max, min};
 use basic_types::{convert, Color, GeneralRectangle, IsAColor, IsARectangle, IsARectangularArea, Rectangle};
-use labyrinth::{Labyrinth, LabyrinthState};
+use labyrinth::{BoxState, Labyrinth, LabyrinthState};
 use failure::Error;
-use ndarray::{Ix2 as Dim};
 use gtk::WidgetExt;
 
 #[derive(Debug)]
@@ -37,18 +36,20 @@ impl EventHandler {
                            event: &gdk::EventButton)
                            -> Result<(), Error> {
         if let Some(ref mut labyrinth) = state.labyrinth {
-            const LEFT_MOUSE_BUTTON: u32 = 1;
-            const RIGHT_MOUSE_BUTTON: u32 = 3;
             let box_state = match event.get_button() {
-                LEFT_MOUSE_BUTTON => {
-                    BoxState::Labyrinth
+                1 => {
+                    /* left mouse button */
+                    Some(BoxState::Labyrinth)
                 }
-                RIGHT_MOUSE_BUTTON => {
-                    BoxState::Empty
+                3 => {
+                    /* right mouse button */
+                    Some(BoxState::Empty)
                 }
-                _ => (),
+                _ => None,
             };
-            self.handle_mark_box(drawing_area, labyrinth, event.get_position(), box_state)?; 
+            if let Some(state) = box_state {
+                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), state)?;
+            }
         }
         Ok(())
     }
@@ -59,9 +60,15 @@ impl EventHandler {
                             -> Result<(), Error> {
         if let Some(ref mut labyrinth) = state.labyrinth {
             if event.get_state() & gdk::ModifierType::BUTTON1_MASK != gdk::ModifierType::empty() {
-                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), BoxState::Labyrinth)?;
+                self.handle_mark_box(drawing_area,
+                                      labyrinth,
+                                      event.get_position(),
+                                      BoxState::Labyrinth)?;
             } else if event.get_state() & gdk::ModifierType::BUTTON3_MASK != gdk::ModifierType::empty() {
-                self.handle_mark_box(drawing_area, labyrinth, event.get_position(), BoxState::Empty)?;
+                self.handle_mark_box(drawing_area,
+                                      labyrinth,
+                                      event.get_position(),
+                                      BoxState::Empty)?;
             }
         }
         Ok(())
@@ -144,15 +151,14 @@ impl EventHandler {
         cairo_context.save();
         labyrinth.call_for_every_box(drawing_area, |intersection, entry| -> Result<(), Error> {
             let float_rectangle: GeneralRectangle<f64> = intersection.to()?;
-            cairo_context.set_source_rgb(entry.color.red(), entry.color.green(), 
-                                         entry.color.blue()); 
+            cairo_context.set_source_rgb(entry.color.red(), entry.color.green(), entry.color.blue());
             cairo_context.rectangle(float_rectangle.x(),
-            float_rectangle.y(),
-            float_rectangle.width(),
-            float_rectangle.height());
-            cairo_context.fill(); 
+                                    float_rectangle.y(),
+                                    float_rectangle.width(),
+                                    float_rectangle.height());
+            cairo_context.fill();
             Ok(())
-        });
+        })?;
         cairo_context.restore();
         Ok(())
     }
@@ -160,11 +166,11 @@ impl EventHandler {
                        drawing_area: &gtk::DrawingArea,
                        labyrinth: &mut Labyrinth,
                        (x, y): (f64, f64),
-                       state : BoxState)
+                       state: BoxState)
                        -> Result<(), Error> {
-        labyrinth.set_box_state((x,y), state, |rectangle| -> Result<(), Error> {
-            let rectangle = self.box_to_pixel::<i32, u32>(rectangle)?;
-            drawing_area.queue_draw_area(rectangle.x, rectangle.y, rectangle.width, rectangle.height); 
+        labyrinth.set_box_state((x, y), state, |rectangle| -> Result<(), Error> {
+            let rectangle: GeneralRectangle<i32> = rectangle.to()?;
+            drawing_area.queue_draw_area(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
             Ok(())
         })?;
         Ok(())

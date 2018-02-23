@@ -1,0 +1,10 @@
+language: rust
+rust:
+  - stable
+  - nightly
+script:
+  - cargo clean
+  - cargo build --verbose --all
+  - cargo test --verbose --all
+  - (test $TRAVIS_RUST_VERSION != "nightly" || cargo install clippy)
+  - (test $TRAVIS_RUST_VERSION != "nightly" || cargo clippy)
