@@ -2,16 +2,29 @@ use std::option::Option;
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 use ndarray::{Array2 as Array, Ix2 as Dim};
-use basic_types::{convert, GeneralRectangle, IsARectangularArea, LabyrinthError, Rectangle, TwoDimensionalRange};
+use basic_types::{convert, GeneralRectangle, IsARectangularArea, LabyrinthError, Rectangle, TwoDimensionalRange, Color};
 use failure::Error;
 use conv::ValueFrom;
+
+pub enum BoxState {
+    Empty,
+    Labyrinth,
+    StartPoint,
+    EndPoint
+}
+
+#[derive(Debug,Copy,Clone)]
+pub struct LabyrinthEntry {
+    state : BoxState,
+    color : Color;
+}
 
 #[derive(Debug)]
 pub struct Labyrinth {
     pub rectangle: Rectangle,
     pub x_box_cnt: u32,
     pub y_box_cnt: u32,
-    pub marked: Array<bool>,
+    pub marked: Array<LabyrinthEntry>,
     pub box_size: u32,
 }
 
