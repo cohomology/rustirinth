@@ -24,30 +24,23 @@ impl Labyrinth {
         let height = (total_height - 2 * top_margin) / box_size * box_size;
         let x_box_cnt = width / box_size;
         let y_box_cnt = height / box_size;
-        Labyrinth {
-            rectangle: Rectangle {
-                x: total_width / 2 - width / 2,
-                y: total_height / 2 - height / 2,
-                width: width + 1,
-                height: height + 1,
-            },
-            x_box_cnt: x_box_cnt,
-            y_box_cnt: y_box_cnt,
-            marked: Array::<bool>::default(Dim(x_box_cnt as usize, y_box_cnt as usize)),
-            box_size: box_size,
-        }
+        Labyrinth { rectangle: Rectangle { x: total_width / 2 - width / 2,
+                                           y: total_height / 2 - height / 2,
+                                           width: width + 1,
+                                           height: height + 1, },
+                    x_box_cnt: x_box_cnt,
+                    y_box_cnt: y_box_cnt,
+                    marked: Array::<bool>::default(Dim(x_box_cnt as usize, y_box_cnt as usize)),
+                    box_size: box_size, }
     }
     pub fn pixel_to_box(&self, (x, y): (u32, u32)) -> Option<(u32, u32)> {
         if x <= self.rectangle.x || x >= self.rectangle.x + self.rectangle.width || y <= self.rectangle.y
-            || y >= self.rectangle.y + self.rectangle.height
+           || y >= self.rectangle.y + self.rectangle.height
         {
             None
         } else {
             // with border => this is for user input
-            Some((
-                ((x - self.rectangle.x) / self.box_size),
-                ((y - self.rectangle.y) / self.box_size),
-            ))
+            Some((((x - self.rectangle.x) / self.box_size), ((y - self.rectangle.y) / self.box_size)))
         }
     }
     pub fn pixel_rectangle_to_box_range(&self, rectangle: &Rectangle) -> Result<TwoDimensionalRange, Error> {
@@ -66,22 +59,15 @@ impl Labyrinth {
         } else {
             box_bottom_right_y + 1
         };
-        Ok((
-            (box_top_left_x..box_bottom_right_x),
-            (box_top_left_y..box_bottom_right_y),
-        ))
+        Ok(((box_top_left_x..box_bottom_right_x), (box_top_left_y..box_bottom_right_y)))
     }
     fn coerce_rectangle_into_labyrinth(&self, rectangle: &Rectangle) -> ((u32, u32), (u32, u32)) {
-        (
-            self.coerce_point_into_labyrinth((rectangle.top_left_x(), rectangle.top_left_y())),
-            self.coerce_point_into_labyrinth((rectangle.bottom_right_x(), rectangle.bottom_right_y())),
-        )
+        (self.coerce_point_into_labyrinth((rectangle.top_left_x(), rectangle.top_left_y())),
+        self.coerce_point_into_labyrinth((rectangle.bottom_right_x(), rectangle.bottom_right_y())))
     }
     fn coerce_point_into_labyrinth(&self, (x, y): (u32, u32)) -> (u32, u32) {
-        (
-            Labyrinth::coerce_coordinate_into_labyrinth(x, self.rectangle.x, self.rectangle.width),
-            Labyrinth::coerce_coordinate_into_labyrinth(y, self.rectangle.y, self.rectangle.height),
-        )
+        (Labyrinth::coerce_coordinate_into_labyrinth(x, self.rectangle.x, self.rectangle.width),
+        Labyrinth::coerce_coordinate_into_labyrinth(y, self.rectangle.y, self.rectangle.height))
     }
     fn coerce_coordinate_into_labyrinth(coordinate: u32, start: u32, dimension: u32) -> u32 {
         if coordinate <= start {
@@ -93,9 +79,8 @@ impl Labyrinth {
         }
     }
     fn check_valid_tuple<T, S>(value: Option<(T, T)>) -> Result<(S, S), Error>
-    where
-        S: Copy + Debug + ValueFrom<T>,
-        T: Copy + Debug,
+        where S: Copy + Debug + ValueFrom<T>,
+              T: Copy + Debug
     {
         match value {
             Some((x, y)) => {
@@ -107,11 +92,10 @@ impl Labyrinth {
         }
     }
     pub fn box_to_pixel<T, S>(&self, (x_box, y_box): (S, S)) -> Result<GeneralRectangle<T>, Error>
-    where
-        T: Copy + Default + PartialOrd + Debug + Add<Output = T> + Sub<Output = T>,
-        T: ValueFrom<u32>,
-        u32: ValueFrom<S>,
-        S: Copy + Default + PartialOrd + Debug + Add<Output = S> + Sub<Output = S>,
+        where T: Copy + Default + PartialOrd + Debug + Add<Output = T> + Sub<Output = T>,
+              T: ValueFrom<u32>,
+              u32: ValueFrom<S>,
+              S: Copy + Default + PartialOrd + Debug + Add<Output = S> + Sub<Output = S>
     {
         let x_box: u32 = convert(x_box)?;
         let y_box: u32 = convert(y_box)?;
@@ -119,12 +103,10 @@ impl Labyrinth {
             Err(LabyrinthError::InternalError.into())
         } else {
             // without border for this function; this is just for drawing
-            GeneralRectangle::<T>::from::<u32, Rectangle>(&Rectangle {
-                x: self.rectangle.x + self.box_size * x_box + 1,
-                y: self.rectangle.y + self.box_size * y_box + 1,
-                width: self.box_size - 2,
-                height: self.box_size - 2,
-            })
+            GeneralRectangle::<T>::from::<u32, Rectangle>(&Rectangle { x: self.rectangle.x + self.box_size * x_box + 1,
+                                                                       y: self.rectangle.y + self.box_size * y_box + 1,
+                                                                       width: self.box_size - 2,
+                                                                       height: self.box_size - 2, })
         }
     }
 }
@@ -137,9 +119,7 @@ pub struct LabyrinthState {
 
 impl LabyrinthState {
     pub fn new(box_size: u32) -> LabyrinthState {
-        LabyrinthState {
-            box_size: box_size,
-            labyrinth: None,
-        }
+        LabyrinthState { box_size: box_size,
+                         labyrinth: None, }
     }
 }

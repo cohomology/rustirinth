@@ -46,12 +46,10 @@ pub trait IsARectangle<T> {
 
 impl IsARectangle<i32> for gtk::Rectangle {
     fn from_tuple((x, y, width, height): (i32, i32, i32, i32)) -> gtk::Rectangle {
-        gtk::Rectangle {
-            x,
-            y,
-            width,
-            height,
-        }
+        gtk::Rectangle { x,
+                         y,
+                         width,
+                         height, }
     }
     fn x(&self) -> i32 {
         self.x
@@ -69,12 +67,10 @@ impl IsARectangle<i32> for gtk::Rectangle {
 
 impl IsARectangle<i32> for cairo::RectangleInt {
     fn from_tuple((x, y, width, height): (i32, i32, i32, i32)) -> cairo::RectangleInt {
-        cairo::RectangleInt {
-            x,
-            y,
-            width,
-            height,
-        }
+        cairo::RectangleInt { x,
+                              y,
+                              width,
+                              height, }
     }
     fn x(&self) -> i32 {
         self.x
@@ -91,8 +87,7 @@ impl IsARectangle<i32> for cairo::RectangleInt {
 }
 
 impl<T> IsARectangle<T> for (T, T, T, T)
-where
-    T: Copy,
+    where T: Copy
 {
     fn from_tuple(tuple: (T, T, T, T)) -> (T, T, T, T) {
         tuple
@@ -113,8 +108,7 @@ where
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, PartialOrd)]
 pub struct GeneralRectangle<T>
-where
-    T: Copy + Clone + Default + Debug,
+    where T: Copy + Clone + Default + Debug
 {
     pub x: T,
     pub y: T,
@@ -125,16 +119,13 @@ where
 pub type Rectangle = GeneralRectangle<u32>;
 
 impl<T> IsARectangle<T> for GeneralRectangle<T>
-where
-    T: Copy + Clone + Default + Debug,
+    where T: Copy + Clone + Default + Debug
 {
     fn from_tuple((x, y, width, height): (T, T, T, T)) -> GeneralRectangle<T> {
-        GeneralRectangle::<T> {
-            x,
-            y,
-            width,
-            height,
-        }
+        GeneralRectangle::<T> { x,
+                                y,
+                                width,
+                                height, }
     }
     fn x(&self) -> T {
         self.x
@@ -167,72 +158,59 @@ fn partial_min<U: PartialOrd>(a: U, b: U) -> U {
 }
 
 fn raise_error<T>(value: T) -> Error
-where
-    T: Debug,
+    where T: Debug
 {
-    LabyrinthError::ConversionError {
-        value: format!("{:?}", value),
-    }.into()
+    LabyrinthError::ConversionError { value: format!("{:?}", value), }.into()
 }
 
 pub fn convert<T, S>(value: T) -> Result<S, Error>
-where
-    S: ValueFrom<T> + Copy + Debug,
-    T: Debug + Copy,
+    where S: ValueFrom<T> + Copy + Debug,
+          T: Debug + Copy
 {
     ValueInto::value_into(value).map_err(|_| raise_error(value))
 }
 
 pub fn approx_convert<T, S>(value: T) -> Result<S, Error>
-where
-    S: ApproxFrom<T> + Copy + Debug,
-    T: Debug + Copy,
+    where S: ApproxFrom<T> + Copy + Debug,
+          T: Debug + Copy
 {
     ApproxInto::approx_into(value).map_err(|_| raise_error(value))
 }
 
 impl<U> GeneralRectangle<U>
-where
-    U: Copy + Clone + Default + PartialOrd + Debug + Add<Output = U> + Sub<Output = U>,
+    where U: Copy + Clone + Default + PartialOrd + Debug + Add<Output = U> + Sub<Output = U>
 {
     pub fn from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, Error>
-    where
-        R: IsARectangle<T>,
-        U: ValueFrom<T>,
-        T: Copy + Debug,
+        where R: IsARectangle<T>,
+              U: ValueFrom<T>,
+              T: Copy + Debug
     {
         let x = convert(rectangle.x())?;
         let y = convert(rectangle.y())?;
         let width = convert(rectangle.width())?;
         let height = convert(rectangle.height())?;
-        Ok(GeneralRectangle::<U> {
-            x,
-            y,
-            width,
-            height,
-        })
+        Ok(GeneralRectangle::<U> { x,
+                                   y,
+                                   width,
+                                   height, })
     }
     pub fn approx_from<T, R>(rectangle: &R) -> Result<GeneralRectangle<U>, Error>
-    where
-        R: IsARectangle<T>,
-        U: ApproxFrom<T>,
-        T: Copy + Debug,
+        where R: IsARectangle<T>,
+              U: ApproxFrom<T>,
+              T: Copy + Debug
     {
         let x = approx_convert(rectangle.x())?;
         let y = approx_convert(rectangle.y())?;
         let width = approx_convert(rectangle.width())?;
         let height = approx_convert(rectangle.height())?;
-        Ok(GeneralRectangle::<U> {
-            x,
-            y,
-            width,
-            height,
-        })
+        Ok(GeneralRectangle::<U> { x,
+                                   y,
+                                   width,
+                                   height, })
     }
     pub fn to<T, R>(&self) -> Result<R, Error>
-    where
-        R: IsARectangle<T>,
-        T: ValueFrom<U> + Copy + Debug,
+        where R: IsARectangle<T>,
+              T: ValueFrom<U> + Copy + Debug
     {
         let x = convert(self.x)?;
         let y = convert(self.y)?;
@@ -241,9 +219,8 @@ where
         Ok(R::from_tuple((x, y, width, height)))
     }
     pub fn approx_to<T, R>(&self) -> Result<R, Error>
-    where
-        R: IsARectangle<T>,
-        T: ApproxFrom<U> + Copy + Debug,
+        where R: IsARectangle<T>,
+              T: ApproxFrom<U> + Copy + Debug
     {
         let x = approx_convert(self.x)?;
         let y = approx_convert(self.y)?;
@@ -257,19 +234,17 @@ where
             let top_left_y = partial_max(self.y, other.y);
             let bottom_right_x = partial_min(self.bottom_right_x(), other.bottom_right_x());
             let bottom_right_y = partial_min(self.bottom_right_y(), other.bottom_right_y());
-            Some(GeneralRectangle::<U> {
-                x: top_left_x,
-                y: top_left_y,
-                width: bottom_right_x - top_left_x,
-                height: bottom_right_y - top_left_y,
-            })
+            Some(GeneralRectangle::<U> { x: top_left_x,
+                                         y: top_left_y,
+                                         width: bottom_right_x - top_left_x,
+                                         height: bottom_right_y - top_left_y, })
         } else {
             None
         }
     }
     fn inside_bounds(&self, other: &GeneralRectangle<U>) -> bool {
         other.bottom_right_x() >= self.x && other.x <= self.x + self.width && other.y + other.height >= self.y
-            && other.y <= self.y + self.height
+        && other.y <= self.y + self.height
     }
 }
 
@@ -281,10 +256,9 @@ pub trait IsARectangularArea<T> {
 }
 
 impl<T, R> IsARectangularArea<T> for R
-where
-    T: Add,
-    R: IsARectangle<T>,
-    T: Add<Output = T>,
+    where T: Add,
+          R: IsARectangle<T>,
+          T: Add<Output = T>
 {
     fn top_left_x(&self) -> T {
         self.x()
@@ -303,8 +277,7 @@ where
 pub type TwoDimensionalRange = (Range<usize>, Range<usize>);
 
 pub trait IsAColor<T>
-where
-    T: Copy,
+    where T: Copy
 {
     fn from_tuple(tuple: (T, T, T)) -> Self;
     fn to_tuple(&self) -> (T, T, T) {
@@ -321,9 +294,8 @@ where
 }
 
 pub struct GeneralColor<T>
-where
-    f64: From<T>,
-    T: From<u32> + Copy,
+    where f64: From<T>,
+          T: From<u32> + Copy
 {
     red: T,
     green: T,
@@ -331,9 +303,8 @@ where
 }
 
 impl<T> IsAColor<T> for GeneralColor<T>
-where
-    f64: From<T>,
-    T: From<u32> + Copy,
+    where f64: From<T>,
+          T: From<u32> + Copy
 {
     fn from_tuple((red, green, blue): (T, T, T)) -> GeneralColor<T> {
         GeneralColor::<T> { red, green, blue }
@@ -375,91 +346,69 @@ mod tests {
 
     #[test]
     fn from_cairo_ok() {
-        let cairo_rectangle = cairo::RectangleInt {
-            x: 1,
-            y: 2,
-            width: 3,
-            height: 4,
-        };
+        let cairo_rectangle = cairo::RectangleInt { x: 1,
+                                                    y: 2,
+                                                    width: 3,
+                                                    height: 4, };
         let rectangle = Rectangle::from(&cairo_rectangle).unwrap();
-        assert_eq!(
-            rectangle,
-            Rectangle {
-                x: 1,
-                y: 2,
-                width: 3,
-                height: 4,
-            }
-        );
+        assert_eq!(rectangle,
+                   Rectangle { x: 1,
+                               y: 2,
+                               width: 3,
+                               height: 4, });
     }
 
     #[test]
     fn from_cairo_err() {
-        let cairo_rectangle = cairo::RectangleInt {
-            x: -1,
-            y: 2,
-            width: 3,
-            height: 4,
-        };
+        let cairo_rectangle = cairo::RectangleInt { x: -1,
+                                                    y: 2,
+                                                    width: 3,
+                                                    height: 4, };
         let rectangle = Rectangle::from(&cairo_rectangle);
         assert!(rectangle.is_err());
         let error = rectangle.err().unwrap();
         let error_string = format!("{}", error);
-        assert_eq!(
-            error_string,
-            "Conversion error or overflow while converting \"-1\""
-        );
+        assert_eq!(error_string,
+                   "Conversion error or overflow while converting \"-1\"");
     }
 
     #[test]
     fn from_gtk_ok() {
-        let gtk_rectangle = gtk::Rectangle {
-            x: 1,
-            y: 2,
-            width: 3,
-            height: 4,
-        };
+        let gtk_rectangle = gtk::Rectangle { x: 1,
+                                             y: 2,
+                                             width: 3,
+                                             height: 4, };
         let rectangle = Rectangle::from(&gtk_rectangle).unwrap();
-        assert_eq!(
-            rectangle,
-            Rectangle {
-                x: 1,
-                y: 2,
-                width: 3,
-                height: 4,
-            }
-        );
+        assert_eq!(rectangle,
+                   Rectangle { x: 1,
+                               y: 2,
+                               width: 3,
+                               height: 4, });
     }
 
     #[test]
     fn to_float_tuple() {
         type Ftuple = (f64, f64, f64, f64);
-        let rectangle = Rectangle {
-            x: 1,
-            y: 2,
-            width: 3,
-            height: 4,
-        };
+        let rectangle = Rectangle { x: 1,
+                                    y: 2,
+                                    width: 3,
+                                    height: 4, };
         let float_tuple: Ftuple = rectangle.to().unwrap();
         assert_eq!(float_tuple, (1.0, 2.0, 3.0, 4.0));
     }
 
     #[test]
     fn general_rectangle_overflow() {
-        let big_rectangle = GeneralRectangle::<u64> {
-            x: 1,
-            y: 4_294_967_296,
-            width: 3,
-            height: 4,
-        };
+        let big_rectangle = GeneralRectangle::<u64> { x: 1,
+                                                      y: 4_294_967_296,
+                                                      width: 3,
+                                                      height: 4, };
         let rectangle = big_rectangle.to::<u32, Rectangle>();
         assert!(rectangle.is_err());
         let error = rectangle.err().unwrap();
         let error_string = format!("{}", error);
-        assert_eq!(
-            error_string,
-            "Conversion error or overflow while converting \"4294967296\""
-        );
+        assert_eq!(error_string,
+                   "Conversion error or overflow while converting \"4294967296\"");
     }
 
     #[test]
@@ -469,10 +418,8 @@ mod tests {
         assert!(rectangle.is_err());
         let error = rectangle.err().unwrap();
         let error_string = format!("{}", error);
-        assert_eq!(
-            error_string,
-            "Conversion error or overflow while converting \"4294967296.0\""
-        );
+        assert_eq!(error_string,
+                   "Conversion error or overflow while converting \"4294967296.0\"");
     }
 
     #[test]
