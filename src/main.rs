@@ -14,6 +14,7 @@ mod game;
 mod event_handler;
 mod labyrinth;
 mod basic_types;
+mod convert;
 
 fn run() -> Result<(), failure::Error> {
     let default_box_size = "64";
