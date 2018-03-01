@@ -15,7 +15,7 @@ mod event_handler;
 mod labyrinth;
 mod basic_types;
 mod rectangle;
-mod screen;
+mod grid;
 
 fn run() -> Result<(), failure::Error> {
     let default_box_size = "64";

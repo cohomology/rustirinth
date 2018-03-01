@@ -2,8 +2,7 @@ use std::option::Option;
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 use ndarray::{Array2 as Array, Ix2 as Dim, SliceInfo, SliceOrIndex};
-use basic_types::{convert, Color, GeneralRectangle, IsAColor, IsARectangularArea, LabyrinthError,
-                  Rectangle, TwoDimensionalRange};
+use basic_types::{convert, Color, GeneralRectangle, IsAColor, IsARectangularArea, LabyrinthError, Rectangle, TwoDimensionalRange};
 use failure::Error;
 use conv::ValueFrom;
 
@@ -58,23 +57,18 @@ impl Labyrinth {
                 width: width + 1,
                 height: height + 1,
             },
-            x_box_cnt: x_box_cnt,
-            y_box_cnt: y_box_cnt,
+            x_box_cnt,
+            y_box_cnt,
             marked: Array::<LabyrinthEntry>::from_elem(
                 Dim(x_box_cnt as usize, y_box_cnt as usize),
                 LabyrinthEntry {
                     state: BoxState::Empty,
                 },
             ),
-            box_size: box_size,
+            box_size,
         }
     }
-    pub fn set_box_state<F>(
-        &mut self,
-        (x, y): (f64, f64),
-        state: BoxState,
-        call_success: F,
-    ) -> Result<(), Error>
+    pub fn set_box_state<F>(&mut self, (x, y): (f64, f64), state: BoxState, call_success: F) -> Result<(), Error>
     where
         F: FnOnce(&Rectangle) -> Result<(), Error>,
     {
@@ -113,8 +107,8 @@ impl Labyrinth {
         Ok(())
     }
     pub fn pixel_to_box(&self, (x, y): (u32, u32)) -> Option<(u32, u32)> {
-        if x <= self.rectangle.x || x >= self.rectangle.x + self.rectangle.width
-            || y <= self.rectangle.y || y >= self.rectangle.y + self.rectangle.height
+        if x <= self.rectangle.x || x >= self.rectangle.x + self.rectangle.width || y <= self.rectangle.y
+            || y >= self.rectangle.y + self.rectangle.height
         {
             None
         } else {
@@ -125,20 +119,11 @@ impl Labyrinth {
             ))
         }
     }
-    pub fn pixel_rectangle_to_box_range(
-        &self,
-        rectangle: &Rectangle,
-    ) -> Result<TwoDimensionalRange, Error> {
-        let ((top_left_x, top_left_y), (bottom_right_x, bottom_right_y)) =
-            self.coerce_rectangle_into_labyrinth(rectangle);
-        let (box_top_left_x, box_top_left_y) = Labyrinth::check_valid_tuple::<u32, usize>(
-            self.pixel_to_box((top_left_x, top_left_y)),
-        )?;
+    pub fn pixel_rectangle_to_box_range(&self, rectangle: &Rectangle) -> Result<TwoDimensionalRange, Error> {
+        let ((top_left_x, top_left_y), (bottom_right_x, bottom_right_y)) = self.coerce_rectangle_into_labyrinth(rectangle);
+        let (box_top_left_x, box_top_left_y) = Labyrinth::check_valid_tuple::<u32, usize>(self.pixel_to_box((top_left_x, top_left_y)))?;
         let (mut box_bottom_right_x, mut box_bottom_right_y) =
-            Labyrinth::check_valid_tuple::<u32, usize>(self.pixel_to_box((
-                bottom_right_x,
-                bottom_right_y,
-            )))?;
+            Labyrinth::check_valid_tuple::<u32, usize>(self.pixel_to_box((bottom_right_x, bottom_right_y)))?;
         box_bottom_right_x = if box_bottom_right_x + 1 >= self.x_box_cnt as usize {
             self.x_box_cnt as usize
         } else {
@@ -157,10 +142,7 @@ impl Labyrinth {
     fn coerce_rectangle_into_labyrinth(&self, rectangle: &Rectangle) -> ((u32, u32), (u32, u32)) {
         (
             self.coerce_point_into_labyrinth((rectangle.top_left_x(), rectangle.top_left_y())),
-            self.coerce_point_into_labyrinth((
-                rectangle.bottom_right_x(),
-                rectangle.bottom_right_y(),
-            )),
+            self.coerce_point_into_labyrinth((rectangle.bottom_right_x(), rectangle.bottom_right_y())),
         )
     }
     fn coerce_point_into_labyrinth(&self, (x, y): (u32, u32)) -> (u32, u32) {
@@ -224,7 +206,7 @@ pub struct LabyrinthState {
 impl LabyrinthState {
     pub fn new(box_size: u32) -> LabyrinthState {
         LabyrinthState {
-            box_size: box_size,
+            box_size,
             labyrinth: None,
         }
     }

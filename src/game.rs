@@ -46,7 +46,7 @@ impl LabyrinthGame {
     fn initialize_window(box_size: u32, screen: &gdk::Screen) -> Result<LabyrinthGame, Error> {
         let main_window = LabyrinthMainWindow::new(screen)?;
         Ok(LabyrinthGame {
-            main_window: main_window,
+            main_window,
             event_handler: Rc::new(RefCell::new(EventHandler::new())),
             state: Rc::new(RefCell::new(LabyrinthState::new(box_size))),
         }.connect_delete_event()

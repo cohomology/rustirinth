@@ -268,8 +268,8 @@ where
         }
     }
     fn inside_bounds(&self, other: &GeneralRectangle<U>) -> bool {
-        other.bottom_right_x() >= self.x && other.x <= self.x + self.width
-            && other.y + other.height >= self.y && other.y <= self.y + self.height
+        other.bottom_right_x() >= self.x && other.x <= self.x + self.width && other.y + other.height >= self.y
+            && other.y <= self.y + self.height
     }
 }
 
@@ -483,8 +483,7 @@ mod tests {
 
     #[test]
     fn to_float() {
-        let rectangle =
-            Rectangle::from::<u32, (u32, u32, u32, u32)>(&(1, 4294967295, 3, 4)).unwrap();
+        let rectangle = Rectangle::from::<u32, (u32, u32, u32, u32)>(&(1, 4294967295, 3, 4)).unwrap();
         let float_tuple = rectangle.approx_to::<f64, (f64, f64, f64, f64)>().unwrap();
         assert_eq!(float_tuple, ((1.0, 4294967295.0, 3.0, 4.0)));
     }
