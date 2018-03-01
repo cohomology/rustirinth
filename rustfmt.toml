@@ -1,9 +1,1 @@
-unstable_features = true
-indent_style = "Visual"
-struct_lit_single_line = true
-force_multiline_blocks = true
-match_block_trailing_comma = false
-imports_layout = "Horizontal"
-fn_single_line = true
-empty_item_single_line = true
-max_width = 130
+max_width = 100
